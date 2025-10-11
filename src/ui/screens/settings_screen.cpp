@@ -103,7 +103,7 @@ void SettingsScreen::create(BluetoothManager* bluetooth, GrindController* grind_
     create_diagnostics_page(diagnostics_page);
 
     // Create menu items grouped with separators
-    create_separator(main_page, "Settings");
+    create_menu_section(main_page, "Settings");
     lv_obj_t* bluetooth_item = create_menu_item(main_page, "Bluetooth");
     lv_menu_set_load_page_event(menu, bluetooth_item, bluetooth_page);
 
@@ -113,11 +113,11 @@ void SettingsScreen::create(BluetoothManager* bluetooth, GrindController* grind_
     lv_obj_t* grind_mode_item = create_menu_item(main_page, "Grind Settings");
     lv_menu_set_load_page_event(menu, grind_mode_item, grind_mode_page);
 
-    create_separator(main_page, "Maintenance");
+    create_menu_section(main_page, "Maintenance");
     lv_obj_t* tools_item = create_menu_item(main_page, "Tools");
     lv_menu_set_load_page_event(menu, tools_item, tools_page);
 
-    create_separator(main_page, "Info");
+    create_menu_section(main_page, "Info");
     lv_obj_t* diagnostics_item = create_menu_item(main_page, "Diagnostics");
     lv_menu_set_load_page_event(menu, diagnostics_item, diagnostics_page);
 
@@ -700,6 +700,24 @@ lv_obj_t* SettingsScreen::create_separator(lv_obj_t* parent, const char* text) {
     lv_obj_set_style_border_width(right_line, 0, 0);
 
     return separator_container;
+}
+
+lv_obj_t* SettingsScreen::create_menu_section(lv_obj_t* parent, const char* text) {
+    lv_obj_t* separator = lv_menu_separator_create(parent);
+    lv_obj_set_style_pad_all(separator, 4, 0);
+    lv_obj_set_style_pad_left(separator, 6, 0);
+    lv_obj_set_style_pad_right(separator, 6, 0);
+    lv_obj_set_style_pad_bottom(separator, 2, 0);
+    lv_obj_set_style_bg_opa(separator, LV_OPA_TRANSP, 0);
+
+    if (text && text[0] != '\0') {
+        lv_obj_t* label = lv_label_create(separator);
+        lv_label_set_text(label, text);
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_24, 0);
+        lv_obj_set_style_text_color(label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    }
+
+    return separator;
 }
 
 void SettingsScreen::update_bluetooth_startup_toggle() {
