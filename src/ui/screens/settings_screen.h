@@ -59,6 +59,8 @@ private:
     // Grind mode tab elements
     lv_obj_t* grind_mode_radio_group;
     lv_obj_t* grind_mode_swipe_toggle;
+    lv_obj_t* auto_start_toggle;
+    lv_obj_t* auto_return_toggle;
     
     // Tools tab elements
     lv_obj_t* cal_button;
