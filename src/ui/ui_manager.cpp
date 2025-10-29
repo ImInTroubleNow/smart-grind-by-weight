@@ -82,6 +82,7 @@ void UIManager::create_ui() {
     menu_screen.create(bluetooth_manager, grind_controller, &grinding_screen, hardware_manager, diagnostics_controller_.get());
     calibration_screen.create();
     confirm_screen.create();
+    purge_confirm_screen.create();
     autotune_screen.create();
     ota_screen.create();
     ota_update_failed_screen.create();
@@ -237,6 +238,10 @@ void UIManager::switch_to_state(UIState new_state) {
 
         case UIState::CONFIRM:
             confirm_screen.show();
+            break;
+
+        case UIState::PURGE_CONFIRM:
+            purge_confirm_screen.show();
             break;
 
         case UIState::AUTOTUNING:

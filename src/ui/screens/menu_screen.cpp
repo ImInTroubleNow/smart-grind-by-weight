@@ -40,7 +40,9 @@ void MenuScreen::create(BluetoothManager* bluetooth, GrindController* grind_ctrl
     scale_weight_label = nullptr;
     scale_tare_button = nullptr;
     scale_item = nullptr;
-    prime_toggle = nullptr;
+    grinder_purge_mode_radio_group = nullptr;
+    grinder_purge_amount_slider = nullptr;
+    grinder_purge_amount_label = nullptr;
     lv_obj_add_flag(screen, LV_OBJ_FLAG_HIDDEN);
 
     // Create menu UI immediately at boot for instant access
@@ -322,6 +324,12 @@ static void grind_mode_callback(int selected_index, void* user_data) {
     EventBridgeLVGL::handle_event(EventBridgeLVGL::EventType::GRIND_MODE_RADIO_BUTTON, nullptr);
 }
 
+// Callback for grinder purge mode radio button selection
+static void grinder_purge_mode_callback(int selected_index, void* user_data) {
+    // Trigger the event system instead of handling directly
+    EventBridgeLVGL::handle_event(EventBridgeLVGL::EventType::GRINDER_PURGE_MODE_RADIO_BUTTON, nullptr);
+}
+
 void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
     lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
@@ -366,10 +374,26 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
     create_description_label(parent, "Exit the completion screen once that cup weight drops away.");
     create_toggle_row(parent, "Return", &auto_return_toggle);
 
-    // Advanced priming option
-    create_separator(parent, "Advanced");
-    create_description_label(parent, "The grinder assumes the chute starts primed. Enable priming if you purge or blow out the chute before grinding.");
-    create_toggle_row(parent, "Prime", &prime_toggle);
+    // Grinder Purging section
+    create_separator(parent, "Purging");
+    create_description_label(parent, "Prime keeps the coffee used to saturate the grinder, purge prompts you to discard stale grinds.");
+
+    // Radio button group for grinder purge mode (Prime/Purge)
+    const char* grinder_purge_modes[] = {"Prime", "Purge"};
+    grinder_purge_mode_radio_group = create_radio_button_group(
+        parent,
+        grinder_purge_modes,
+        2,
+        LV_FLEX_FLOW_ROW,
+        1,  // Purge initially selected (index 1)
+        135, 100,  // Width, Height
+        grinder_purge_mode_callback,
+        this
+    );
+
+    // Slider for grinder purge amount (0.1g - 5.0g, default 1.0g)
+    create_slider_row(parent, "Amount", &grinder_purge_amount_label, &grinder_purge_amount_slider,
+                     lv_color_hex(THEME_COLOR_ACCENT), 1, 50);  // 1-50 = 0.1g-5.0g (scale by 0.1)
 
     // Register events for the toggles (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -385,9 +409,11 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
         lv_obj_add_event_cb(auto_return_toggle, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::AUTO_RETURN_TOGGLE)));
     }
-    if (prime_toggle) {
-        lv_obj_add_event_cb(prime_toggle, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
-                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_PRIME_TOGGLE)));
+    if (grinder_purge_amount_slider) {
+        lv_obj_add_event_cb(grinder_purge_amount_slider, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRINDER_PURGE_AMOUNT_SLIDER)));
+        lv_obj_add_event_cb(grinder_purge_amount_slider, EventBridgeLVGL::dispatch_event, LV_EVENT_RELEASED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRINDER_PURGE_AMOUNT_SLIDER_RELEASED)));
     }
 }
 
@@ -841,6 +867,14 @@ void MenuScreen::update_brightness_labels(int normal_percent, int screensaver_pe
     }
 }
 
+void MenuScreen::update_grinder_purge_amount_label(float amount_g) {
+    if (grinder_purge_amount_label) {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "Amount: %.1fg", amount_g);
+        lv_label_set_text(grinder_purge_amount_label, buffer);
+    }
+}
+
 lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text) {
     // Create separator container
     lv_obj_t* separator_container = lv_obj_create(parent);
@@ -1045,13 +1079,15 @@ void MenuScreen::update_grind_mode_toggles() {
 
     // Read current grind mode from main grinder preferences using hardware manager
     int mode_index = 0; // Default to Weight (index 0)
-    bool prime_enabled = false;
+    int grinder_purge_mode_index = GRIND_PURGE_MODE_DEFAULT;  // Default to Purge
+    float grinder_purge_amount_g = GRIND_PURGE_AMOUNT_DEFAULT_G;  // Default to 1.0g
     if (hardware_manager) {
         Preferences* main_prefs = hardware_manager->get_preferences();
         if (main_prefs) {
             int stored_mode = main_prefs->getInt("grind_mode", static_cast<int>(GrindMode::WEIGHT));
             mode_index = (stored_mode == static_cast<int>(GrindMode::TIME)) ? 1 : 0;
-            prime_enabled = main_prefs->getBool(GrindController::PREF_KEY_PRIME_ENABLED, false);
+            grinder_purge_mode_index = main_prefs->getInt(GrindController::PREF_KEY_GRINDER_MODE, GRIND_PURGE_MODE_DEFAULT);
+            grinder_purge_amount_g = main_prefs->getFloat(GrindController::PREF_KEY_GRINDER_AMOUNT_G, GRIND_PURGE_AMOUNT_DEFAULT_G);
         }
     }
 
@@ -1090,11 +1126,17 @@ void MenuScreen::update_grind_mode_toggles() {
         }
     }
 
-    if (prime_toggle) {
-        if (prime_enabled) {
-            lv_obj_add_state(prime_toggle, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(prime_toggle, LV_STATE_CHECKED);
-        }
+    // Update grinder purge mode radio group selection
+    if (grinder_purge_mode_radio_group) {
+        radio_button_group_set_selection(grinder_purge_mode_radio_group, grinder_purge_mode_index);
     }
+
+    // Update grinder purge amount slider (scale: slider 1-50 = 0.1g-5.0g)
+    if (grinder_purge_amount_slider) {
+        int slider_value = (int)(grinder_purge_amount_g * 10.0f);  // Convert grams to slider value (0.1g increments)
+        lv_slider_set_value(grinder_purge_amount_slider, slider_value, LV_ANIM_OFF);
+    }
+
+    // Update grinder purge amount label
+    update_grinder_purge_amount_label(grinder_purge_amount_g);
 }

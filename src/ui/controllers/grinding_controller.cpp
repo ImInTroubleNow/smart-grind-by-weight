@@ -99,6 +99,17 @@ void GrindingUIController::register_events() {
             }
         }, LV_EVENT_CLICKED, this);
     }
+
+    // Register purge confirm button
+    if (lv_obj_t* purge_continue_btn = ui_manager_->purge_confirm_screen.get_continue_button()) {
+        lv_obj_add_event_cb(purge_continue_btn, [](lv_event_t* e) {
+            if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+                if (auto* controller = static_cast<GrindingUIController*>(lv_event_get_user_data(e))) {
+                    controller->handle_purge_confirm_continue();
+                }
+            }
+        }, LV_EVENT_CLICKED, this);
+    }
 }
 
 void GrindingUIController::on_state_changed(UIState new_state) {
@@ -250,6 +261,31 @@ void GrindingUIController::handle_layout_toggle() {
     }
 }
 
+void GrindingUIController::handle_purge_confirm_continue() {
+    if (!ui_manager_ || !ui_manager_->grind_controller) {
+        return;
+    }
+
+    // Check if "Keep purge grinds from now on" checkbox is checked
+    if (ui_manager_->purge_confirm_screen.is_checkbox_checked()) {
+        LOG_BLE("[%lums PURGE] User chose to keep grinds - switching to Prime mode\n", millis());
+
+        // Switch grinder purge mode from Purge to Prime in preferences
+        auto* hardware = ui_manager_->get_hardware_manager();
+        Preferences* prefs = hardware ? hardware->get_preferences() : nullptr;
+        if (prefs) {
+            prefs->putInt(GrindController::PREF_KEY_GRINDER_MODE, static_cast<int>(GrinderPurgeMode::PRIME));
+        }
+    }
+
+    // Hide the purge confirmation screen and continue grinding
+    ui_manager_->purge_confirm_screen.hide();
+    ui_manager_->switch_to_state(UIState::GRINDING);
+
+    // Tell the grind controller to continue from PURGE_CONFIRM to PREDICTIVE
+    ui_manager_->grind_controller->continue_from_purge();
+}
+
 void GrindingUIController::update_grind_button_icon() {
     if (!ui_manager_ || !grind_button_ || !grind_icon_) {
         return;
@@ -347,9 +383,14 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
     switch (event_data.event) {
         case UIGrindEvent::PHASE_CHANGED: {
             ui_manager_->current_mode = event_data.mode;
-            if (event_data.phase != GrindPhase::IDLE &&
-                event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE &&
-                !ui_manager_->state_machine->is_state(UIState::GRINDING)) {
+
+            // Handle PURGE_CONFIRM phase specially - show purge confirmation popup
+            if (event_data.phase == GrindPhase::PURGE_CONFIRM) {
+                LOG_UI_DEBUG("[%lums UI_TRANSITION] Switching to PURGE_CONFIRM state\n", millis());
+                ui_manager_->switch_to_state(UIState::PURGE_CONFIRM);
+            } else if (event_data.phase != GrindPhase::IDLE &&
+                       event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE &&
+                       !ui_manager_->state_machine->is_state(UIState::GRINDING)) {
                 LOG_UI_DEBUG("[%lums UI_TRANSITION] Switching to GRINDING state due to phase: %s\n",
                              millis(), event_data.phase_display_text);
                 WeightSensor* weight_sensor = ui_manager_->hardware_manager->get_weight_sensor();
@@ -383,7 +424,8 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
                     event_data.phase != GrindPhase::IDLE && event_data.phase != GrindPhase::TARING &&
                     event_data.phase != GrindPhase::TARE_CONFIRM && event_data.phase != GrindPhase::INITIALIZING &&
                     event_data.phase != GrindPhase::SETUP && event_data.phase != GrindPhase::COMPLETED &&
-                    event_data.phase != GrindPhase::TIMEOUT && event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE) {
+                    event_data.phase != GrindPhase::TIMEOUT && event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE &&
+                    event_data.phase != GrindPhase::PURGE_CONFIRM) {
                     ui_manager_->grinding_screen.add_chart_data_point(event_data.current_weight, event_data.flow_rate, millis());
                 }
             }
@@ -402,7 +444,8 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
                     event_data.phase != GrindPhase::IDLE && event_data.phase != GrindPhase::TARING &&
                     event_data.phase != GrindPhase::TARE_CONFIRM && event_data.phase != GrindPhase::INITIALIZING &&
                     event_data.phase != GrindPhase::SETUP && event_data.phase != GrindPhase::COMPLETED &&
-                    event_data.phase != GrindPhase::TIMEOUT && event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE) {
+                    event_data.phase != GrindPhase::TIMEOUT && event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE &&
+                    event_data.phase != GrindPhase::PURGE_CONFIRM) {
                     ui_manager_->grinding_screen.add_chart_data_point(event_data.current_weight, event_data.flow_rate, millis());
                 }
             }
