@@ -50,16 +50,26 @@ void PurgeConfirmScreen::create() {
     lv_obj_update_layout(message_container);
     lv_obj_scroll_to_y(message_container, 0, LV_ANIM_OFF);
 
-    // Checkbox with label
+    // Checkbox with label - 2x normal size
     checkbox = lv_checkbox_create(screen);
-    lv_checkbox_set_text(checkbox, "Keep grinds (switch to Prime)");
-    lv_obj_set_style_text_font(checkbox, &lv_font_montserrat_24, 0);
+    lv_checkbox_set_text(checkbox, "Never ask");
+    lv_obj_set_style_text_font(checkbox, &lv_font_montserrat_32, 0);  // Larger font
     lv_obj_set_style_text_color(checkbox, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
     lv_obj_set_width(checkbox, 260);  // Set max width to prevent overflow
 
-    // Single "CONTINUE" button
-    continue_button = create_button(screen, "CONTINUE", lv_color_hex(THEME_COLOR_SUCCESS), 260, 80, &lv_font_montserrat_28);
-    continue_button_label = lv_obj_get_child(continue_button, -1);
+    // Scale up the checkbox indicator to 2x size
+    lv_obj_set_style_transform_scale(checkbox, 200, LV_PART_INDICATOR);  // 200 = 2.0x scale
+
+    // Single large circular CONTINUE button (GRIND button acts as cancel)
+    continue_button = lv_button_create(screen);
+    lv_obj_set_size(continue_button, 120, 120);  // Large circular button
+    lv_obj_set_style_radius(continue_button, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(continue_button, lv_color_hex(THEME_COLOR_SUCCESS), 0);
+
+    lv_obj_t* button_label = lv_label_create(continue_button);
+    lv_label_set_text(button_label, LV_SYMBOL_OK);
+    lv_obj_set_style_text_font(button_label, &lv_font_montserrat_56, 0);
+    lv_obj_center(button_label);
 
     visible = false;
     lv_obj_add_flag(screen, LV_OBJ_FLAG_HIDDEN);

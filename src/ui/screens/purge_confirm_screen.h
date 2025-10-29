@@ -9,7 +9,6 @@ private:
     lv_obj_t* message_label;
     lv_obj_t* checkbox;
     lv_obj_t* continue_button;
-    lv_obj_t* continue_button_label;
     bool visible;
 
 public:
