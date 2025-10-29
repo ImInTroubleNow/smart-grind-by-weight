@@ -57,7 +57,7 @@ void PurgeConfirmScreen::create() {
 
     // Checkbox with label - 2x normal size
     checkbox = lv_checkbox_create(screen);
-    lv_checkbox_set_text(checkbox, "Never ask");
+    lv_checkbox_set_text(checkbox, "Always keep");
     lv_obj_set_style_text_font(checkbox, &lv_font_montserrat_32, 0);  // Larger font
     lv_obj_set_style_text_color(checkbox, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
     lv_obj_set_width(checkbox, 260);  // Set max width to prevent overflow
