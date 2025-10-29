@@ -60,16 +60,8 @@ void PurgeConfirmScreen::create() {
     // Scale up the checkbox indicator to 2x size
     lv_obj_set_style_transform_scale(checkbox, 200, LV_PART_INDICATOR);  // 200 = 2.0x scale
 
-    // Single large circular CONTINUE button (GRIND button acts as cancel)
-    continue_button = lv_button_create(screen);
-    lv_obj_set_size(continue_button, 120, 120);  // Large circular button
-    lv_obj_set_style_radius(continue_button, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(continue_button, lv_color_hex(THEME_COLOR_SUCCESS), 0);
-
-    lv_obj_t* button_label = lv_label_create(continue_button);
-    lv_label_set_text(button_label, LV_SYMBOL_OK);
-    lv_obj_set_style_text_font(button_label, &lv_font_montserrat_56, 0);
-    lv_obj_center(button_label);
+    // NOTE: No buttons created here - reuse existing grind_button_ (CANCEL) and pulse_button_ (OK)
+    // positioned by GrindingUIController::update_button_layout() when in PURGE_CONFIRM phase
 
     visible = false;
     lv_obj_add_flag(screen, LV_OBJ_FLAG_HIDDEN);
