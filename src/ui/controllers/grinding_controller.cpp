@@ -290,7 +290,11 @@ void GrindingUIController::update_grind_button_icon() {
         return;
     }
 
-    if (ui_manager_->state_machine->is_state(UIState::GRINDING)) {
+    if (ui_manager_->state_machine->is_state(UIState::PURGE_CONFIRM)) {
+        // During purge confirm, show STOP icon (user can cancel the grind)
+        lv_img_set_src(grind_icon_, LV_SYMBOL_STOP);
+        lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_ERROR), 0);
+    } else if (ui_manager_->state_machine->is_state(UIState::GRINDING)) {
         lv_img_set_src(grind_icon_, LV_SYMBOL_STOP);
         lv_obj_set_style_bg_color(grind_button_,
                                   ui_manager_->current_mode == GrindMode::TIME
@@ -404,7 +408,7 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
             if (event_data.phase == GrindPhase::PURGE_CONFIRM) {
                 LOG_UI_DEBUG("[%lums UI_TRANSITION] Switching to PURGE_CONFIRM state\n", millis());
                 ui_manager_->switch_to_state(UIState::PURGE_CONFIRM);
-                update_button_layout();  // Reposition buttons for dual-button layout
+                update_grind_button_icon();  // Update button icon to STOP and reposition for dual-button layout
             } else if (event_data.phase != GrindPhase::IDLE &&
                        event_data.phase != GrindPhase::TIME_ADDITIONAL_PULSE &&
                        !ui_manager_->state_machine->is_state(UIState::GRINDING)) {

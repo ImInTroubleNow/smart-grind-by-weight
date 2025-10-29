@@ -8,8 +8,10 @@ void PurgeConfirmScreen::create() {
     lv_obj_align(screen, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(screen, 0, 0);
-    lv_obj_set_style_pad_ver(screen, 6, 0);
-    lv_obj_set_style_pad_hor(screen, 0, 0);
+    lv_obj_set_style_pad_top(screen, 6, 0);
+    lv_obj_set_style_pad_bottom(screen, 120, 0);  // 120px padding for button area (100px button + 20px margin)
+    lv_obj_set_style_pad_left(screen, 0, 0);
+    lv_obj_set_style_pad_right(screen, 0, 0);
     lv_obj_set_style_pad_gap(screen, 5, 0);
 
     // Set up flex layout (column)
