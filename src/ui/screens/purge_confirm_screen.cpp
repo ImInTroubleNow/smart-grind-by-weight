@@ -4,12 +4,15 @@
 
 void PurgeConfirmScreen::create() {
     screen = lv_obj_create(lv_scr_act());
-    lv_obj_set_size(screen, LV_PCT(100), LV_PCT(100));
+    // Set width to 100% and height to exclude bottom 120px button area
+    // This prevents the screen from blocking touch events to the buttons
+    lv_obj_set_width(screen, LV_PCT(100));
+    lv_obj_set_height(screen, lv_display_get_vertical_resolution(lv_display_get_default()) - 120);
     lv_obj_align(screen, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_opa(screen, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(screen, 0, 0);
     lv_obj_set_style_pad_top(screen, 6, 0);
-    lv_obj_set_style_pad_bottom(screen, 140, 0);  // 140px padding to push content up (100px button + 40px spacing)
+    lv_obj_set_style_pad_bottom(screen, 20, 0);  // Reduced padding since screen no longer covers buttons
     lv_obj_set_style_pad_left(screen, 0, 0);
     lv_obj_set_style_pad_right(screen, 0, 0);
     lv_obj_set_style_pad_gap(screen, 5, 0);

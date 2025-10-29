@@ -190,6 +190,7 @@ void UIManager::switch_to_state(UIState new_state) {
     menu_screen.hide();
     calibration_screen.hide();
     confirm_screen.hide();
+    purge_confirm_screen.hide();
     autotune_screen.hide();
     ota_screen.hide();
     ota_update_failed_screen.hide();

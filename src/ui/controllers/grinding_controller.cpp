@@ -186,9 +186,15 @@ void GrindingUIController::handle_grind_button() {
             millis(), ui_manager_->state_machine->is_state(UIState::READY) ? "READY" :
                        ui_manager_->state_machine->is_state(UIState::GRINDING) ? "GRINDING" :
                        ui_manager_->state_machine->is_state(UIState::GRIND_COMPLETE) ? "GRIND_COMPLETE" :
-                       ui_manager_->state_machine->is_state(UIState::GRIND_TIMEOUT) ? "GRIND_TIMEOUT" : "OTHER");
+                       ui_manager_->state_machine->is_state(UIState::GRIND_TIMEOUT) ? "GRIND_TIMEOUT" :
+                       ui_manager_->state_machine->is_state(UIState::PURGE_CONFIRM) ? "PURGE_CONFIRM" : "OTHER");
 
-    if (ui_manager_->state_machine->is_state(UIState::READY)) {
+    if (ui_manager_->state_machine->is_state(UIState::PURGE_CONFIRM)) {
+        // Cancel grind during purge confirmation
+        if (ui_manager_->grind_controller) {
+            ui_manager_->grind_controller->stop_grind();
+        }
+    } else if (ui_manager_->state_machine->is_state(UIState::READY)) {
         if (ui_manager_->current_tab == 3) {
             ui_manager_->switch_to_state(UIState::MENU);
             return;

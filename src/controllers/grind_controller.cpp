@@ -125,6 +125,8 @@ void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grin
     start_time = millis();
     pulse_attempts = 0;
     timeout_phase = GrindPhase::IDLE; // Initialize timeout phase
+    timeout_pause_start = 0;
+    timeout_offset_ms = 0;
     last_session_result_ = GrindSessionResult::UNKNOWN;
     // Load cell now runs at constant high speed - no mode switching needed
     
@@ -251,6 +253,15 @@ void GrindController::continue_from_purge() {
 
     LOG_BLE("[%lums CONTROLLER] User confirmed purge, continuing to PREDICTIVE\n", millis());
 
+    // Add time spent in PURGE_CONFIRM to timeout offset (exclude from timeout calculation)
+    if (timeout_pause_start > 0) {
+        unsigned long pause_duration = millis() - timeout_pause_start;
+        timeout_offset_ms += pause_duration;
+        LOG_BLE("[%lums CONTROLLER] Excluding %lums pause time from timeout (total offset: %lums)\n",
+                millis(), pause_duration, timeout_offset_ms);
+        timeout_pause_start = 0;
+    }
+
     // Start motor and transition to predictive grinding
     if (grinder) {
         grinder->start();
@@ -369,6 +380,7 @@ void GrindController::update() {
                 // Check grinder saturation mode to determine next phase
                 if (grinder_purge_mode_for_session == GrinderPurgeMode::PURGE) {
                     // Purge mode: wait for user confirmation before continuing
+                    timeout_pause_start = loop_data.now;  // Track when pause started for timeout offset
                     switch_phase(GrindPhase::PURGE_CONFIRM, loop_data);
                 } else {
                     // Prime mode: continue immediately to grinding
@@ -754,7 +766,10 @@ void GrindController::switch_phase(GrindPhase new_phase, const GrindLoopData& lo
 
 
 bool GrindController::check_timeout() const {
-    return (millis() - start_time) >= (GRIND_TIMEOUT_SEC * 1000);
+    // Calculate elapsed time excluding paused states (like PURGE_CONFIRM)
+    unsigned long elapsed_ms = millis() - start_time;
+    unsigned long active_time_ms = elapsed_ms - timeout_offset_ms;
+    return active_time_ms >= (GRIND_TIMEOUT_SEC * 1000);
 }
 
 bool GrindController::is_active() const {

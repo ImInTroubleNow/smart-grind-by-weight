@@ -104,6 +104,8 @@ private:
 
     // Timeout tracking
     GrindPhase timeout_phase;   // Phase when timeout occurred
+    unsigned long timeout_pause_start;  // When we entered a paused state (PURGE_CONFIRM)
+    unsigned long timeout_offset_ms;    // Accumulated time in paused states to exclude from timeout
     
     int pulse_attempts;
     unsigned long pulse_start_time;
