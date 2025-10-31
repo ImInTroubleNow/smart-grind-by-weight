@@ -1,5 +1,6 @@
 #include "menu_screen.h"
 #include <Arduino.h>
+#include <algorithm>
 #include "../../config/constants.h"
 #include "../../logging/grind_logging.h"
 #include "../../system/statistics_manager.h"
@@ -393,9 +394,11 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
 
     create_description_label(parent, "Purge amount is a minimum target, not an exact goal.");
 
-    // Slider for grinder purge amount (0.1g - 5.0g, default 1.0g)
+    // Slider for grinder purge amount (uses kPurgeSliderScale for resolution)
+    const uint32_t slider_min_units = static_cast<uint32_t>(GRIND_PURGE_AMOUNT_MIN_G * kPurgeSliderScale + 0.5f);
+    const uint32_t slider_max_units = static_cast<uint32_t>(GRIND_PURGE_AMOUNT_MAX_G * kPurgeSliderScale + 0.5f);
     create_slider_row(parent, "Amount", &grinder_purge_amount_label, &grinder_purge_amount_slider,
-                     lv_color_hex(THEME_COLOR_ACCENT), 1, 50);  // 1-50 = 0.1g-5.0g (scale by 0.1)
+                     lv_color_hex(THEME_COLOR_ACCENT), slider_min_units, slider_max_units);
 
     // Register events for the toggles (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -872,7 +875,10 @@ void MenuScreen::update_brightness_labels(int normal_percent, int screensaver_pe
 void MenuScreen::update_grinder_purge_amount_label(float amount_g) {
     if (grinder_purge_amount_label) {
         char buffer[16];
-        snprintf(buffer, sizeof(buffer), "Amount: %.1fg", amount_g);
+        float clamped_amount = amount_g;
+        if (clamped_amount < GRIND_PURGE_AMOUNT_MIN_G) clamped_amount = GRIND_PURGE_AMOUNT_MIN_G;
+        if (clamped_amount > GRIND_PURGE_AMOUNT_MAX_G) clamped_amount = GRIND_PURGE_AMOUNT_MAX_G;
+        snprintf(buffer, sizeof(buffer), "Amount: %.1fg", clamped_amount);
         lv_label_set_text(grinder_purge_amount_label, buffer);
     }
 }
@@ -1133,9 +1139,14 @@ void MenuScreen::update_grind_mode_toggles() {
         radio_button_group_set_selection(grinder_purge_mode_radio_group, grinder_purge_mode_index);
     }
 
-    // Update grinder purge amount slider (scale: slider 1-50 = 0.1g-5.0g)
+    grinder_purge_amount_g = std::clamp(grinder_purge_amount_g, GRIND_PURGE_AMOUNT_MIN_G, GRIND_PURGE_AMOUNT_MAX_G);
+    const int slider_min_units = static_cast<int>(GRIND_PURGE_AMOUNT_MIN_G * kPurgeSliderScale + 0.5f);
+    const int slider_max_units = static_cast<int>(GRIND_PURGE_AMOUNT_MAX_G * kPurgeSliderScale + 0.5f);
+
+    // Update grinder purge amount slider using kPurgeSliderScale (0.1g resolution)
     if (grinder_purge_amount_slider) {
-        int slider_value = (int)(grinder_purge_amount_g * 10.0f);  // Convert grams to slider value (0.1g increments)
+        int slider_value = static_cast<int>(grinder_purge_amount_g * kPurgeSliderScale + 0.5f);
+        slider_value = std::clamp(slider_value, slider_min_units, slider_max_units);
         lv_slider_set_value(grinder_purge_amount_slider, slider_value, LV_ANIM_OFF);
     }
 

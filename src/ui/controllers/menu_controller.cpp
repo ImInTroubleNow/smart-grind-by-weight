@@ -18,6 +18,7 @@
 #include "../event_bridge_lvgl.h"
 #include "../ui_helpers.h"
 #include "../ui_manager.h"
+#include "../screens/menu_screen.h"
 
 MenuUIController::MenuUIController(UIManager* manager)
     : ui_manager_(manager) {}
@@ -403,9 +404,10 @@ void MenuUIController::handle_grinder_purge_amount_slider() {
     auto* slider = ui_manager_->menu_screen.get_grinder_purge_amount_slider();
     if (!slider) return;
 
-    // Update label with current slider value (slider 1-50 = 0.1g-5.0g)
     int slider_value = lv_slider_get_value(slider);
-    float amount_g = slider_value * 0.1f;
+    float amount_g = slider_value / MenuScreen::kPurgeSliderScale;
+    if (amount_g < GRIND_PURGE_AMOUNT_MIN_G) amount_g = GRIND_PURGE_AMOUNT_MIN_G;
+    if (amount_g > GRIND_PURGE_AMOUNT_MAX_G) amount_g = GRIND_PURGE_AMOUNT_MAX_G;
 
     // Update the label via MenuScreen method
     ui_manager_->menu_screen.update_grinder_purge_amount_label(amount_g);
@@ -417,9 +419,15 @@ void MenuUIController::handle_grinder_purge_amount_slider_released() {
     auto* slider = ui_manager_->menu_screen.get_grinder_purge_amount_slider();
     if (!slider) return;
 
-    // Save to preferences when slider is released (slider 1-50 = 0.1g-5.0g)
     int slider_value = lv_slider_get_value(slider);
-    float amount_g = slider_value * 0.1f;
+    float amount_g = slider_value / MenuScreen::kPurgeSliderScale;
+    if (amount_g < GRIND_PURGE_AMOUNT_MIN_G) {
+        amount_g = GRIND_PURGE_AMOUNT_MIN_G;
+        lv_slider_set_value(slider, static_cast<int>(GRIND_PURGE_AMOUNT_MIN_G * MenuScreen::kPurgeSliderScale + 0.5f), LV_ANIM_OFF);
+    } else if (amount_g > GRIND_PURGE_AMOUNT_MAX_G) {
+        amount_g = GRIND_PURGE_AMOUNT_MAX_G;
+        lv_slider_set_value(slider, static_cast<int>(GRIND_PURGE_AMOUNT_MAX_G * MenuScreen::kPurgeSliderScale + 0.5f), LV_ANIM_OFF);
+    }
 
     auto* hardware = ui_manager_->get_hardware_manager();
     Preferences* prefs = hardware ? hardware->get_preferences() : nullptr;
@@ -430,6 +438,8 @@ void MenuUIController::handle_grinder_purge_amount_slider_released() {
     LOG_DEBUG_PRINT("Grinder purge amount set to: ");
     LOG_DEBUG_PRINT(amount_g);
     LOG_DEBUG_PRINTLN("g");
+
+    ui_manager_->menu_screen.update_grinder_purge_amount_label(amount_g);
 }
 
 void MenuUIController::handle_brightness_normal_slider() {

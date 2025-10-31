@@ -8,6 +8,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <cmath>
+#include <algorithm>
 
 #if defined(DEBUG_ENABLE_LOADCELL_MOCK) && (DEBUG_ENABLE_LOADCELL_MOCK != 0)
 #include "../hardware/mock_hx711_driver.h"
@@ -119,7 +120,9 @@ void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grin
     if (preferences) {
         int purge_mode_int = preferences->getInt(PREF_KEY_GRINDER_MODE, GRIND_PURGE_MODE_DEFAULT);
         grinder_purge_mode_for_session = static_cast<GrinderPurgeMode>(purge_mode_int);
-        grinder_purge_amount_g_for_session = preferences->getFloat(PREF_KEY_GRINDER_AMOUNT_G, GRIND_PURGE_AMOUNT_DEFAULT_G);
+        float configured_amount = preferences->getFloat(PREF_KEY_GRINDER_AMOUNT_G, GRIND_PURGE_AMOUNT_DEFAULT_G);
+        configured_amount = std::clamp(configured_amount, GRIND_PURGE_AMOUNT_MIN_G, GRIND_PURGE_AMOUNT_MAX_G);
+        grinder_purge_amount_g_for_session = configured_amount;
     }
 
     start_time = millis();

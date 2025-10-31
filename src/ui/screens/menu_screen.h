@@ -94,6 +94,8 @@ private:
     DiagnosticsController* diagnostics_controller;
 
 public:
+    static constexpr float kPurgeSliderScale = 10.0f; // Slider uses 0.1g increments
+
     void create(BluetoothManager* bluetooth, GrindController* grind_ctrl, GrindingScreen* grind_screen, class HardwareManager* hw_mgr, DiagnosticsController* diag_ctrl);
     void show();
     void hide();
