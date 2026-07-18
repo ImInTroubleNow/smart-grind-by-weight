@@ -6,6 +6,7 @@
 #include <esp_err.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
+#include <algorithm>
 #include <cstdint>
 #include "../../config/constants.h"
 #include "../../controllers/grind_controller.h"
@@ -59,6 +60,8 @@ void MenuUIController::register_events() {
     EventBridgeLVGL::register_handler(ET::BRIGHTNESS_NORMAL_SLIDER_RELEASED, [this](lv_event_t*) { handle_brightness_normal_slider_released(); });
     EventBridgeLVGL::register_handler(ET::BRIGHTNESS_SCREENSAVER_SLIDER, [this](lv_event_t*) { handle_brightness_screensaver_slider(); });
     EventBridgeLVGL::register_handler(ET::BRIGHTNESS_SCREENSAVER_SLIDER_RELEASED, [this](lv_event_t*) { handle_brightness_screensaver_slider_released(); });
+    EventBridgeLVGL::register_handler(ET::AUTO_DIM_TIMEOUT_SLIDER, [this](lv_event_t*) { handle_auto_dim_timeout_slider(); });
+    EventBridgeLVGL::register_handler(ET::AUTO_DIM_TIMEOUT_SLIDER_RELEASED, [this](lv_event_t*) { handle_auto_dim_timeout_slider_released(); });
 
     // Note: Event registration for menu widgets is done in the page creation functions
     // (menu_screen.cpp) because the menu is created lazily and destroyed on hide.
@@ -201,7 +204,6 @@ void MenuUIController::handle_autotune() {
 
 void MenuUIController::handle_back() {
     if (!ui_manager_) return;
-    ui_manager_->set_current_tab(3);
     ui_manager_->switch_to_state(UIState::READY);
 }
 
@@ -529,8 +531,8 @@ void MenuUIController::handle_brightness_screensaver_slider() {
     if (!slider) return;
 
     int brightness_percent = lv_slider_get_value(slider);
-    if (brightness_percent < HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT) {
-        brightness_percent = HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT;
+    if (brightness_percent < HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT) {
+        brightness_percent = HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT;
         lv_slider_set_value(slider, brightness_percent, LV_ANIM_OFF);
     }
     float brightness = brightness_percent / 100.0f;
@@ -545,8 +547,8 @@ void MenuUIController::handle_brightness_screensaver_slider_released() {
     if (!slider) return;
 
     int brightness_percent = lv_slider_get_value(slider);
-    if (brightness_percent < HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT) {
-        brightness_percent = HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT;
+    if (brightness_percent < HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT) {
+        brightness_percent = HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT;
         lv_slider_set_value(slider, brightness_percent, LV_ANIM_OFF);
     }
     float brightness = brightness_percent / 100.0f;
@@ -559,6 +561,38 @@ void MenuUIController::handle_brightness_screensaver_slider_released() {
     float normal = get_normal_brightness();
     ui_manager_->get_hardware_manager()->get_display()->set_brightness(normal);
     LOG_DEBUG_PRINTF("Touch released - restored normal brightness to %.2f\n", normal);
+}
+
+void MenuUIController::handle_auto_dim_timeout_slider() {
+    if (!ui_manager_) return;
+
+    auto* slider = ui_manager_->menu_screen.get_auto_dim_timeout_slider();
+    if (!slider) return;
+
+    // Raw index 0-17 maps to 5-90 seconds in 5-second steps.
+    int slider_index = std::clamp(static_cast<int>(lv_slider_get_value(slider)), 0, 17);
+    int seconds = (slider_index + 1) * 5;
+
+    ui_manager_->menu_screen.update_auto_dim_timeout_label(seconds);
+}
+
+void MenuUIController::handle_auto_dim_timeout_slider_released() {
+    if (!ui_manager_) return;
+
+    auto* slider = ui_manager_->menu_screen.get_auto_dim_timeout_slider();
+    if (!slider) return;
+
+    int slider_index = std::clamp(static_cast<int>(lv_slider_get_value(slider)), 0, 17);
+    int seconds = (slider_index + 1) * 5;
+
+    Preferences prefs;
+    prefs.begin("brightness", false);
+    prefs.putInt("autodim_sec", seconds);
+    prefs.end();
+
+    LOG_DEBUG_PRINTF("Auto-dim timeout set to %ds\n", seconds);
+
+    ui_manager_->menu_screen.update_auto_dim_timeout_label(seconds);
 }
 
 void MenuUIController::perform_factory_reset() {
@@ -639,8 +673,9 @@ float MenuUIController::get_normal_brightness() const {
     float brightness = prefs.getFloat("normal", USER_SCREEN_BRIGHTNESS_NORMAL);
     prefs.end();
 
-    if (brightness < 0.15f) {
-        brightness = 0.15f;
+    const float min_brightness = HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT / 100.0f;
+    if (brightness < min_brightness) {
+        brightness = min_brightness;
     }
     return brightness;
 }
@@ -655,10 +690,25 @@ float MenuUIController::get_screensaver_brightness() const {
     float brightness = prefs.getFloat("screensaver", USER_SCREEN_BRIGHTNESS_DIMMED);
     prefs.end();
 
-    if (brightness < 0.15f) {
-        brightness = 0.15f;
+    const float min_brightness = HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT / 100.0f;
+    if (brightness < min_brightness) {
+        brightness = min_brightness;
     }
     return brightness;
+}
+
+uint32_t MenuUIController::get_auto_dim_timeout_ms() const {
+    if (!ui_manager_ || !ui_manager_->hardware_manager) {
+        return USER_SCREEN_AUTO_DIM_TIMEOUT_MS;
+    }
+
+    Preferences prefs;
+    prefs.begin("brightness", true);
+    int seconds = prefs.getInt("autodim_sec", USER_SCREEN_AUTO_DIM_TIMEOUT_MS / 1000);
+    prefs.end();
+
+    seconds = std::clamp(seconds, 5, 90);
+    return static_cast<uint32_t>(seconds) * 1000;
 }
 
 void MenuUIController::stop_motor_timer() {

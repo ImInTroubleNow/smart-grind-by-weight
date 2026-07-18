@@ -129,19 +129,19 @@ void MenuScreen::create_menu_ui() {
     display_page = lv_menu_page_create(menu, "Display");
     create_display_page(display_page);
     
-    grind_mode_page = lv_menu_page_create(menu, "Grind Settings");
+    grind_mode_page = lv_menu_page_create(menu, "Grind Setup");
     create_grind_mode_page(grind_mode_page);
     
     scale_page = lv_menu_page_create(menu, "Scale");
     create_scale_page(scale_page);
 
-    data_page = lv_menu_page_create(menu, "Logs & Data");
+    data_page = lv_menu_page_create(menu, "Logs");
     create_data_page(data_page);
 
-    stats_page = lv_menu_page_create(menu, "Lifetime Stats");
+    stats_page = lv_menu_page_create(menu, "Statistics");
     create_stats_page(stats_page);
 
-    diagnostics_page = lv_menu_page_create(menu, "Diagnostics");
+    diagnostics_page = lv_menu_page_create(menu, "Monitor");
     create_diagnostics_page(diagnostics_page);
 
     // Create menu items grouped with separators
@@ -183,7 +183,7 @@ void MenuScreen::create_menu_ui() {
     lv_menu_set_load_page_event(menu, grind_mode_item, grind_mode_page);
 
     create_separator(main_page, "Info");
-    lv_obj_t* diagnostics_item = create_menu_item(main_page, "Diagnostics");
+    lv_obj_t* diagnostics_item = create_menu_item(main_page, "Monitor");
     lv_menu_set_load_page_event(menu, diagnostics_item, diagnostics_page);
 
     lv_obj_t* info_item = create_menu_item(main_page, "System Info");
@@ -303,6 +303,8 @@ void MenuScreen::create_display_page(lv_obj_t* parent) {
 
     create_slider_row(parent, "Brightness", &brightness_normal_label, &brightness_normal_slider);
     create_slider_row(parent, "Screensaver", &brightness_screensaver_label, &brightness_screensaver_slider, lv_color_hex(THEME_COLOR_WARNING));
+    // Auto-Dim: 18 raw positions (0-17) map to 5-90 seconds in 5-second steps.
+    create_slider_row(parent, "Auto-Dim", &auto_dim_timeout_label, &auto_dim_timeout_slider, lv_color_hex(THEME_COLOR_SUCCESS), 0, 17);
 
     // Register events for the sliders (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -317,6 +319,12 @@ void MenuScreen::create_display_page(lv_obj_t* parent) {
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::BRIGHTNESS_SCREENSAVER_SLIDER)));
         lv_obj_add_event_cb(brightness_screensaver_slider, EventBridgeLVGL::dispatch_event, LV_EVENT_RELEASED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::BRIGHTNESS_SCREENSAVER_SLIDER_RELEASED)));
+    }
+    if (auto_dim_timeout_slider) {
+        lv_obj_add_event_cb(auto_dim_timeout_slider, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::AUTO_DIM_TIMEOUT_SLIDER)));
+        lv_obj_add_event_cb(auto_dim_timeout_slider, EventBridgeLVGL::dispatch_event, LV_EVENT_RELEASED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::AUTO_DIM_TIMEOUT_SLIDER_RELEASED)));
     }
 }
 
@@ -858,21 +866,29 @@ void MenuScreen::update_brightness_sliders() {
     // Load brightness values from preferences (default to compile-time values)
     float normal_brightness = prefs.getFloat("normal", USER_SCREEN_BRIGHTNESS_NORMAL);
     float screensaver_brightness = prefs.getFloat("screensaver", USER_SCREEN_BRIGHTNESS_DIMMED);
+    int auto_dim_seconds = prefs.getInt("autodim_sec", USER_SCREEN_AUTO_DIM_TIMEOUT_MS / 1000);
     prefs.end();
     
     // Convert from 0.0-1.0 to 15-100 range
     int normal_percent = (int)(normal_brightness * 100);
     int screensaver_percent = (int)(screensaver_brightness * 100);
     
-    // Ensure minimum 15%
+    // Enforce each slider's own minimum
     if (normal_percent < HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT) normal_percent = HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT;
-    if (screensaver_percent < HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT) screensaver_percent = HW_DISPLAY_MINIMAL_BRIGHTNESS_PERCENT;
-    
+    if (screensaver_percent < HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT) screensaver_percent = HW_DISPLAY_MINIMAL_DIMMED_BRIGHTNESS_PERCENT;
+
     // Update sliders
     lv_slider_set_value(brightness_normal_slider, normal_percent, LV_ANIM_OFF);
     lv_slider_set_value(brightness_screensaver_slider, screensaver_percent, LV_ANIM_OFF);
-    
+
     update_brightness_labels(normal_percent, screensaver_percent);
+
+    if (auto_dim_timeout_slider) {
+        auto_dim_seconds = std::clamp(auto_dim_seconds, 5, 90);
+        int slider_index = std::clamp((auto_dim_seconds / 5) - 1, 0, 17);
+        lv_slider_set_value(auto_dim_timeout_slider, slider_index, LV_ANIM_OFF);
+        update_auto_dim_timeout_label(auto_dim_seconds);
+    }
 }
 
 void MenuScreen::update_brightness_labels(int normal_percent, int screensaver_percent) {
@@ -909,6 +925,14 @@ void MenuScreen::update_grind_freshness_hours_label(float hours) {
             snprintf(buffer, sizeof(buffer), "Freshness: %.0fh", hours);
         }
         lv_label_set_text(grind_freshness_hours_label, buffer);
+    }
+}
+
+void MenuScreen::update_auto_dim_timeout_label(int seconds) {
+    if (auto_dim_timeout_label) {
+        char buffer[24];
+        snprintf(buffer, sizeof(buffer), "Auto-Dim: %ds", seconds);
+        lv_label_set_text(auto_dim_timeout_label, buffer);
     }
 }
 

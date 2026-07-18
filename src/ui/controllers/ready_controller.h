@@ -16,6 +16,7 @@ public:
     void handle_tab_change(int tab);
     void handle_profile_long_press();
     void toggle_mode();
+    void handle_tab_wrap();
 
 private:
     UIManager* ui_manager_;

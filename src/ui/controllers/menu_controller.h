@@ -37,9 +37,12 @@ public:
     void handle_brightness_normal_slider_released();
     void handle_brightness_screensaver_slider();
     void handle_brightness_screensaver_slider_released();
+    void handle_auto_dim_timeout_slider();
+    void handle_auto_dim_timeout_slider_released();
 
     float get_normal_brightness() const;
     float get_screensaver_brightness() const;
+    uint32_t get_auto_dim_timeout_ms() const;
 
 private:
     UIManager* ui_manager_;

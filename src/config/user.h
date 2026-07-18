@@ -52,9 +52,9 @@
 //------------------------------------------------------------------------------
 // SCREEN AUTO-DIMMING
 //------------------------------------------------------------------------------
-#define USER_SCREEN_AUTO_DIM_TIMEOUT_MS 300000                                 // Time before screen dims due to inactivity
+#define USER_SCREEN_AUTO_DIM_TIMEOUT_MS 30000                                  // Time before screen dims due to inactivity
 #define USER_SCREEN_BRIGHTNESS_NORMAL 1.0f                                     // Normal screen brightness
-#define USER_SCREEN_BRIGHTNESS_DIMMED 0.35f                                    // Dimmed screen brightness
+#define USER_SCREEN_BRIGHTNESS_DIMMED 0.10f                                    // Dimmed screen brightness
 #define USER_WEIGHT_ACTIVITY_THRESHOLD_G 1.0f                                  // Weight change threshold for screen timeout reset (grams)
 
 //------------------------------------------------------------------------------

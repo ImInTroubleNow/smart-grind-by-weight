@@ -7,9 +7,10 @@ class ReadyScreen {
 private:
     lv_obj_t* screen;
     lv_obj_t* tabview;
-    lv_obj_t* profile_tabs[USER_PROFILE_COUNT + 1];  // +1 for menu tab
+    lv_obj_t* profile_tabs[USER_PROFILE_COUNT];
     lv_obj_t* weight_labels[USER_PROFILE_COUNT];
     lv_obj_t* menu_tab;
+    lv_obj_t* menu_icon_button;
     bool visible;
 public:
     void create();
@@ -23,6 +24,7 @@ public:
     lv_obj_t* get_screen() const { return screen; }
     lv_obj_t* get_tabview() const { return tabview; }
     lv_obj_t* get_menu_tab() const { return menu_tab; }
+    lv_obj_t* get_menu_icon_button() const { return menu_icon_button; }
     
 private:
     void create_profile_page(lv_obj_t* parent, int profile_index, const char* profile_name, float weight);

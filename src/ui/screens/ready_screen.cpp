@@ -27,6 +27,23 @@ void ReadyScreen::create() {
     // Transparent background
     lv_obj_set_style_bg_opa(tabview, LV_OPA_TRANSP, 0);
 
+    // Persistent menu icon - lives on 'screen' (not inside tabview) so it stays
+    // visible above every profile tab, giving 1-tap access to Menu from anywhere.
+    menu_icon_button = lv_btn_create(screen);
+    lv_obj_set_size(menu_icon_button, 44, 44);
+    lv_obj_align(menu_icon_button, LV_ALIGN_TOP_LEFT, 8, 8);
+    lv_obj_set_style_radius(menu_icon_button, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(menu_icon_button, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+    lv_obj_set_style_bg_opa(menu_icon_button, LV_OPA_60, 0);
+    lv_obj_set_style_border_width(menu_icon_button, 0, 0);
+    lv_obj_set_style_shadow_width(menu_icon_button, 0, 0);
+    lv_obj_move_foreground(menu_icon_button);
+
+    lv_obj_t* menu_icon = lv_label_create(menu_icon_button);
+    lv_label_set_text(menu_icon, LV_SYMBOL_LIST);
+    lv_obj_set_style_text_font(menu_icon, &lv_font_montserrat_24, 0);
+    lv_obj_center(menu_icon);
+
     // Default weights and names, driven by USER_PROFILE_COUNT
     float default_weights[USER_PROFILE_COUNT] = {
         USER_2CUP_WEIGHT_G, USER_4CUP_WEIGHT_G, USER_6CUP_WEIGHT_G,
@@ -41,13 +58,6 @@ void ReadyScreen::create() {
         profile_tabs[i] = lv_tabview_add_tab(tabview, names[i]);
         create_profile_page(profile_tabs[i], i, names[i], default_weights[i]);
     }
-
-    // Menu tab goes after all profile tabs
-    menu_tab = lv_tabview_add_tab(tabview, "MENU");
-    profile_tabs[USER_PROFILE_COUNT] = menu_tab;
-
-    // Create menu tab page
-    create_menu_page(menu_tab);
 
     update_profile_values(default_weights, GrindMode::WEIGHT);
 
@@ -106,7 +116,7 @@ void ReadyScreen::update_profile_values(const float values[USER_PROFILE_COUNT], 
 }
 
 void ReadyScreen::set_active_tab(int tab) {
-    if (tab >= 0 && tab < USER_PROFILE_COUNT + 1) {
+    if (tab >= 0 && tab < USER_PROFILE_COUNT) {
         lv_tabview_set_act(tabview, tab, LV_ANIM_OFF);
     }
 }
