@@ -295,9 +295,12 @@ Access via **Menu → Diagnostics → Noise Floor**.
 
 ### Grinding Profiles
 All profiles are fully customizable. Default grind-by-weight targets (fallback time values shown in parenthesis):
-- **Single**: 9 g (5 s)
-- **Double**: 18 g (10 s)  
-- **Custom**: 21.5 g (12 s)
+- **2 Cups**: 14 g (8 s)
+- **4 Cups**: 29 g (16 s)
+- **6 Cups**: 43 g (24 s)
+- **8 Cups**: 58 g (32 s)
+- **10 Cups**: 72 g (40 s)
+- **Custom**: 21.5 g (12 s)
 
 > 💡 **Tip** – the target label always shows the active unit (`g` or `s`). Long-press to edit in whichever mode you are currently using.
 
@@ -353,11 +356,23 @@ Need a simple live readout? Open **Menu → Scale** to jump into a full-screen w
 ```
 Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode if enabled)
 |
-+-- Single Profile 
++-- 2 Cups Profile
 |   |-- Weight display (long press to edit)
 |   \-- GRIND button (red=weight, blue=time)
 |
-+-- Double Profile
++-- 4 Cups Profile
+|   |-- Weight display (long press to edit)
+|   \-- GRIND button (red=weight, blue=time)
+|
++-- 6 Cups Profile
+|   |-- Weight display (long press to edit)
+|   \-- GRIND button (red=weight, blue=time)
+|
++-- 8 Cups Profile
+|   |-- Weight display (long press to edit)
+|   \-- GRIND button (red=weight, blue=time)
+|
++-- 10 Cups Profile
 |   |-- Weight display (long press to edit)
 |   \-- GRIND button (red=weight, blue=time)
 |

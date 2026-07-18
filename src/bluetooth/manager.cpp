@@ -1183,19 +1183,31 @@ void BluetoothManager::generate_diagnostic_report() {
     snprintf(buf, sizeof(buf),
         "[COMPILE-TIME PARAMETERS - PROFILES]\n"
         "  USER_PROFILE_COUNT: %d\n"
-        "  USER_SINGLE_ESPRESSO_WEIGHT_G: %.1f\n"
-        "  USER_DOUBLE_ESPRESSO_WEIGHT_G: %.1f\n"
+        "  USER_2CUP_WEIGHT_G: %.1f\n"
+        "  USER_4CUP_WEIGHT_G: %.1f\n"
+        "  USER_6CUP_WEIGHT_G: %.1f\n"
+        "  USER_8CUP_WEIGHT_G: %.1f\n"
+        "  USER_10CUP_WEIGHT_G: %.1f\n"
         "  USER_CUSTOM_PROFILE_WEIGHT_G: %.1f\n"
-        "  USER_SINGLE_ESPRESSO_TIME_S: %.1f\n"
-        "  USER_DOUBLE_ESPRESSO_TIME_S: %.1f\n"
+        "  USER_2CUP_TIME_S: %.1f\n"
+        "  USER_4CUP_TIME_S: %.1f\n"
+        "  USER_6CUP_TIME_S: %.1f\n"
+        "  USER_8CUP_TIME_S: %.1f\n"
+        "  USER_10CUP_TIME_S: %.1f\n"
         "  USER_CUSTOM_PROFILE_TIME_S: %.1f\n"
         "\n",
         USER_PROFILE_COUNT,
-        USER_SINGLE_ESPRESSO_WEIGHT_G,
-        USER_DOUBLE_ESPRESSO_WEIGHT_G,
+        USER_2CUP_WEIGHT_G,
+        USER_4CUP_WEIGHT_G,
+        USER_6CUP_WEIGHT_G,
+        USER_8CUP_WEIGHT_G,
+        USER_10CUP_WEIGHT_G,
         USER_CUSTOM_PROFILE_WEIGHT_G,
-        USER_SINGLE_ESPRESSO_TIME_S,
-        USER_DOUBLE_ESPRESSO_TIME_S,
+        USER_2CUP_TIME_S,
+        USER_4CUP_TIME_S,
+        USER_6CUP_TIME_S,
+        USER_8CUP_TIME_S,
+        USER_10CUP_TIME_S,
         USER_CUSTOM_PROFILE_TIME_S
     );
     send_chunk(buf);
@@ -1342,9 +1354,6 @@ void BluetoothManager::generate_diagnostic_report() {
 
     // Section 11: Statistics
     uint32_t total_grinds = statistics_manager.get_total_grinds();
-    uint32_t single_shots = statistics_manager.get_single_shots();
-    uint32_t double_shots = statistics_manager.get_double_shots();
-    uint32_t custom_shots = statistics_manager.get_custom_shots();
     uint64_t motor_runtime_ms = statistics_manager.get_motor_runtime_ms();
     uint32_t motor_hrs = (uint32_t)(motor_runtime_ms / 3600000ULL);
     uint32_t motor_min = (uint32_t)((motor_runtime_ms % 3600000ULL) / 60000ULL);
@@ -1361,12 +1370,17 @@ void BluetoothManager::generate_diagnostic_report() {
     snprintf(buf, sizeof(buf),
         "[STATISTICS]\n"
         "  Total Grinds: %lu\n"
-        "  Shots: %lu Single / %lu Double / %lu Custom\n"
+        "  Shots: %lu 2Cup / %lu 4Cup / %lu 6Cup / %lu 8Cup / %lu 10Cup / %lu Custom\n"
         "  Motor Runtime: %luh %lum\n"
         "  Device Uptime: %luh %lum\n"
         "\n",
         total_grinds,
-        single_shots, double_shots, custom_shots,
+        statistics_manager.get_profile_shots(0),
+        statistics_manager.get_profile_shots(1),
+        statistics_manager.get_profile_shots(2),
+        statistics_manager.get_profile_shots(3),
+        statistics_manager.get_profile_shots(4),
+        statistics_manager.get_profile_shots(5),
         motor_hrs, motor_min,
         device_uptime_hrs, device_uptime_min
     );

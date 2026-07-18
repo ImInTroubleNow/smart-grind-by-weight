@@ -11,7 +11,7 @@ from circular_buffer_math import calculate_95th_percentile_series
 # --- Configuration ---
 DB_FILE = os.environ.get('GRIND_DB_PATH', '../database/grinder_data.db')
 TOLERANCE_G = 0.03  # Actual grind accuracy tolerance
-PROFILE_MAP = {0: "SINGLE", 1: "DOUBLE", 2: "CUSTOM"}
+PROFILE_MAP = {0: "2 CUPS", 1: "4 CUPS", 2: "6 CUPS", 3: "8 CUPS", 4: "10 CUPS", 5: "CUSTOM"}
 MODE_MAP = {0: "WEIGHT", 1: "TIME"}
 TERMINATION_REASON_MAP = {
     0: "COMPLETE",
@@ -957,7 +957,7 @@ else: # Multi-Session Analysis
     st.sidebar.header("Session Filters")
     profile_options = ["All"] + list(sessions_df['profile_name'].dropna().unique())
     selected_profile = st.sidebar.selectbox("Filter by Profile", profile_options,
-                                           help="Filter sessions by grind profile: SINGLE (18g), DOUBLE (36g), CUSTOM (user-defined). Profile ID stored in grind_sessions table.")
+                                           help="Filter sessions by grind profile: 2/4/6/8/10 CUPS or CUSTOM (user-defined). Profile ID stored in grind_sessions table.")
     
     if selected_profile != "All":
         filtered_sessions = sessions_df[sessions_df['profile_name'] == selected_profile]

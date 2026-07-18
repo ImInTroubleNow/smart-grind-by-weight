@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <esp_system.h>
+#include <esp_heap_caps.h>
 #include "hardware/hardware_manager.h"
 #include "system/state_machine.h"
 #include "system/statistics_manager.h"
@@ -93,16 +94,9 @@ void setup() {
         state_machine.init(UIState::READY);
     }
     
-    ui_manager.init(&hardware_manager, &state_machine, &profile_controller, &grind_controller, &bluetooth_manager);
-    
-    // Store OTA failure info in ui_manager if needed
-    if (ota_failed) {
-        if (auto* ota = ui_manager.get_ota_data_export_controller()) {
-            ota->set_failure_info(failed_ota_build.c_str());
-        }
-    }
-    
-    // Set up UI status callback to avoid circular dependency
+    // Set up UI status callback to avoid circular dependency.
+    // Safe to register before ui_manager.init() runs below - this only stores
+    // the callback function, it doesn't call into ui_manager yet.
     bluetooth_manager.set_ui_status_callback([](const char* status) {
         if (auto* ota = ui_manager.get_ota_data_export_controller()) {
             ota->update_status(status);
@@ -122,8 +116,19 @@ void setup() {
     
     LOG_BLE("✅ Task module dependencies initialized\n");
     
-    // Initialize TaskManager with hardware and system interfaces
+    // Initialize TaskManager and create all FreeRTOS tasks NOW, while heap memory
+    // is still large and unfragmented. This must happen BEFORE ui_manager.init()
+    // builds LVGL screens below - screen creation allocates many small heap blocks
+    // that can fragment memory and starve later task stack allocations of a large
+    // enough contiguous block. The UI render task is safe to create before screens
+    // exist: UIManager::update() checks an internal "initialized" flag and simply
+    // no-ops each cycle until ui_manager.init() completes moments later.
     LOG_BLE("[STARTUP] Initializing FreeRTOS Task Architecture...\n");
+    LOG_BLE("[STARTUP] Free heap: %u, Largest free block: %u\n", 
+            (unsigned)ESP.getFreeHeap(), (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+    LOG_BLE("[STARTUP] Internal free: %u, Internal largest block: %u\n", 
+            (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL), 
+            (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
     bool task_init_success = task_manager.init(&hardware_manager, &state_machine, &profile_controller, 
                                               &grind_controller, &bluetooth_manager, &ui_manager);
     
@@ -140,6 +145,17 @@ void setup() {
     file_io_task.init(task_manager.get_file_io_queue());
     
     LOG_BLE("✅ All task modules initialized\n");
+    
+    // Build the UI screens now. The UI render task created above is already
+    // running in the background but has been safely no-oping until this point.
+    ui_manager.init(&hardware_manager, &state_machine, &profile_controller, &grind_controller, &bluetooth_manager);
+    
+    // Store OTA failure info in ui_manager if needed
+    if (ota_failed) {
+        if (auto* ota = ui_manager.get_ota_data_export_controller()) {
+            ota->set_failure_info(failed_ota_build.c_str());
+        }
+    }
 }
 
 void loop() {

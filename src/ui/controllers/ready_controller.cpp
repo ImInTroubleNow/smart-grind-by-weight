@@ -30,7 +30,7 @@ void ReadyUIController::handle_tab_change(int tab) {
     }
 
     ui_manager_->current_tab = tab;
-    if (ui_manager_->profile_controller && tab < 3) {
+    if (ui_manager_->profile_controller && tab < USER_PROFILE_COUNT) {
         ui_manager_->profile_controller->set_current_profile(tab);
         refresh_profiles();
     }
@@ -45,7 +45,7 @@ void ReadyUIController::handle_profile_long_press() {
         return;
     }
 
-    if (!ui_manager_->state_machine->is_state(UIState::READY) || ui_manager_->current_tab >= 3) {
+    if (!ui_manager_->state_machine->is_state(UIState::READY) || ui_manager_->current_tab >= USER_PROFILE_COUNT) {
         return;
     }
 
@@ -59,7 +59,7 @@ void ReadyUIController::handle_profile_long_press() {
 }
 
 void ReadyUIController::toggle_mode() {
-    if (!ui_manager_ || ui_manager_->current_tab >= 3) {
+    if (!ui_manager_ || ui_manager_->current_tab >= USER_PROFILE_COUNT) {
         return;
     }
 

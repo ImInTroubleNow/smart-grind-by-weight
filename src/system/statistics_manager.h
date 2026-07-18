@@ -1,16 +1,14 @@
 #pragma once
 #include <Preferences.h>
 #include <cstdint>
+#include "../config/constants.h"
 
 // Represents the persistent snapshot of lifetime statistics.
 struct StatisticsSnapshot {
-    static constexpr uint32_t kVersion = 2;
-
+    static constexpr uint32_t kVersion = 3;
     uint32_t version = kVersion;
     uint32_t total_grinds = 0;
-    uint32_t single_shots = 0;
-    uint32_t double_shots = 0;
-    uint32_t custom_shots = 0;
+    uint32_t profile_shots[USER_PROFILE_COUNT] = {0};
     uint32_t motor_runtime_sec = 0;
     uint32_t motor_runtime_ms_remainder = 0;
     uint32_t device_uptime_hrs = 0;
@@ -35,7 +33,7 @@ public:
     void init(Preferences* prefs);
 
     // Update methods - called by various system components
-    void update_grind_session(float final_weight, float error_grams, uint8_t pulse_count,
+    void update_grind_session(uint8_t profile_id, float final_weight, float error_grams, uint8_t pulse_count,
                               bool is_weight_mode, uint32_t motor_time_ms);
     void update_motor_test(uint32_t duration_ms);
     void update_time_pulse();
@@ -43,9 +41,7 @@ public:
 
     // Retrieval methods
     uint32_t get_total_grinds() const;
-    uint32_t get_single_shots() const;
-    uint32_t get_double_shots() const;
-    uint32_t get_custom_shots() const;
+    uint32_t get_profile_shots(int profile_index) const;
     uint32_t get_motor_runtime_sec() const;
     uint64_t get_motor_runtime_ms() const;
     uint32_t get_device_uptime_hrs() const;

@@ -27,20 +27,24 @@ void ReadyScreen::create() {
     // Transparent background
     lv_obj_set_style_bg_opa(tabview, LV_OPA_TRANSP, 0);
 
-    // Add profile tabs
-    profile_tabs[0] = lv_tabview_add_tab(tabview, "Single");
-    profile_tabs[1] = lv_tabview_add_tab(tabview, "Double");
-    profile_tabs[2] = lv_tabview_add_tab(tabview, "Custom");
-    menu_tab = lv_tabview_add_tab(tabview, "MENU");
-    profile_tabs[3] = menu_tab;
+    // Default weights and names, driven by USER_PROFILE_COUNT
+    float default_weights[USER_PROFILE_COUNT] = {
+        USER_2CUP_WEIGHT_G, USER_4CUP_WEIGHT_G, USER_6CUP_WEIGHT_G,
+        USER_8CUP_WEIGHT_G, USER_10CUP_WEIGHT_G, USER_CUSTOM_PROFILE_WEIGHT_G
+    };
+    const char* names[USER_PROFILE_COUNT] = {
+        "2 CUPS", "4 CUPS", "6 CUPS", "8 CUPS", "10 CUPS", "CUSTOM"
+    };
 
-    // Default weights
-    float default_weights[3] = {USER_SINGLE_ESPRESSO_WEIGHT_G, USER_DOUBLE_ESPRESSO_WEIGHT_G, USER_CUSTOM_PROFILE_WEIGHT_G};
-    const char* names[3] = {"SINGLE", "DOUBLE", "CUSTOM"};
-    
-    for (int i = 0; i < 3; i++) {
+    // Add profile tabs
+    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+        profile_tabs[i] = lv_tabview_add_tab(tabview, names[i]);
         create_profile_page(profile_tabs[i], i, names[i], default_weights[i]);
     }
+
+    // Menu tab goes after all profile tabs
+    menu_tab = lv_tabview_add_tab(tabview, "MENU");
+    profile_tabs[USER_PROFILE_COUNT] = menu_tab;
 
     // Create menu tab page
     create_menu_page(menu_tab);
@@ -91,8 +95,8 @@ void ReadyScreen::hide() {
     visible = false;
 }
 
-void ReadyScreen::update_profile_values(const float values[3], GrindMode mode) {
-    for (int i = 0; i < 3; i++) {
+void ReadyScreen::update_profile_values(const float values[USER_PROFILE_COUNT], GrindMode mode) {
+    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
         if (weight_labels[i]) {
             char text[24];
             format_ready_value(text, sizeof(text), mode, values[i]);
@@ -102,13 +106,13 @@ void ReadyScreen::update_profile_values(const float values[3], GrindMode mode) {
 }
 
 void ReadyScreen::set_active_tab(int tab) {
-    if (tab >= 0 && tab < 4) {
+    if (tab >= 0 && tab < USER_PROFILE_COUNT + 1) {
         lv_tabview_set_act(tabview, tab, LV_ANIM_OFF);
     }
 }
 
 void ReadyScreen::set_profile_long_press_handler(lv_event_cb_t handler) {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
         if (weight_labels[i]) {
             lv_obj_add_event_cb(weight_labels[i], handler, LV_EVENT_LONG_PRESSED, NULL);
         }

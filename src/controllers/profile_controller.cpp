@@ -7,17 +7,29 @@ void ProfileController::init(Preferences* prefs) {
     preferences = prefs;
     
     // Initialize default profiles
-    strcpy(profiles[0].name, "SINGLE");
-    profiles[0].weight = USER_SINGLE_ESPRESSO_WEIGHT_G;
-    profiles[0].time_seconds = USER_SINGLE_ESPRESSO_TIME_S;
+    strcpy(profiles[0].name, "2 CUPS");
+    profiles[0].weight = USER_2CUP_WEIGHT_G;
+    profiles[0].time_seconds = USER_2CUP_TIME_S;
     
-    strcpy(profiles[1].name, "DOUBLE");
-    profiles[1].weight = USER_DOUBLE_ESPRESSO_WEIGHT_G;
-    profiles[1].time_seconds = USER_DOUBLE_ESPRESSO_TIME_S;
+    strcpy(profiles[1].name, "4 CUPS");
+    profiles[1].weight = USER_4CUP_WEIGHT_G;
+    profiles[1].time_seconds = USER_4CUP_TIME_S;
     
-    strcpy(profiles[2].name, "CUSTOM");
-    profiles[2].weight = USER_CUSTOM_PROFILE_WEIGHT_G;
-    profiles[2].time_seconds = USER_CUSTOM_PROFILE_TIME_S;
+    strcpy(profiles[2].name, "6 CUPS");
+    profiles[2].weight = USER_6CUP_WEIGHT_G;
+    profiles[2].time_seconds = USER_6CUP_TIME_S;
+    
+    strcpy(profiles[3].name, "8 CUPS");
+    profiles[3].weight = USER_8CUP_WEIGHT_G;
+    profiles[3].time_seconds = USER_8CUP_TIME_S;
+    
+    strcpy(profiles[4].name, "10 CUPS");
+    profiles[4].weight = USER_10CUP_WEIGHT_G;
+    profiles[4].time_seconds = USER_10CUP_TIME_S;
+    
+    strcpy(profiles[5].name, "CUSTOM");
+    profiles[5].weight = USER_CUSTOM_PROFILE_WEIGHT_G;
+    profiles[5].time_seconds = USER_CUSTOM_PROFILE_TIME_S;
     
     // Initialize default grind mode
     current_grind_mode = GrindMode::WEIGHT;
@@ -26,33 +38,42 @@ void ProfileController::init(Preferences* prefs) {
 }
 
 void ProfileController::load_profiles() {
-    current_profile = preferences->getInt("profile", 1);
+    current_profile = preferences->getInt("profile", 0);
     
-    profiles[0].weight = preferences->getFloat("weight0", USER_SINGLE_ESPRESSO_WEIGHT_G);
-    profiles[1].weight = preferences->getFloat("weight1", USER_DOUBLE_ESPRESSO_WEIGHT_G);
-    profiles[2].weight = preferences->getFloat("weight2", USER_CUSTOM_PROFILE_WEIGHT_G);
-
-    profiles[0].time_seconds = preferences->getFloat("time0", USER_SINGLE_ESPRESSO_TIME_S);
-    profiles[1].time_seconds = preferences->getFloat("time1", USER_DOUBLE_ESPRESSO_TIME_S);
-    profiles[2].time_seconds = preferences->getFloat("time2", USER_CUSTOM_PROFILE_TIME_S);
+    static const float default_weights[USER_PROFILE_COUNT] = {
+        USER_2CUP_WEIGHT_G, USER_4CUP_WEIGHT_G, USER_6CUP_WEIGHT_G,
+        USER_8CUP_WEIGHT_G, USER_10CUP_WEIGHT_G, USER_CUSTOM_PROFILE_WEIGHT_G
+    };
+    static const float default_times[USER_PROFILE_COUNT] = {
+        USER_2CUP_TIME_S, USER_4CUP_TIME_S, USER_6CUP_TIME_S,
+        USER_8CUP_TIME_S, USER_10CUP_TIME_S, USER_CUSTOM_PROFILE_TIME_S
+    };
+    
+    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+        char weight_key[8], time_key[8];
+        snprintf(weight_key, sizeof(weight_key), "weight%d", i);
+        snprintf(time_key, sizeof(time_key), "time%d", i);
+        profiles[i].weight = preferences->getFloat(weight_key, default_weights[i]);
+        profiles[i].time_seconds = preferences->getFloat(time_key, default_times[i]);
+    }
     
     // Load grind mode (default to WEIGHT if not set)
     int stored_mode = preferences->getInt("grind_mode", static_cast<int>(GrindMode::WEIGHT));
     current_grind_mode = static_cast<GrindMode>(stored_mode);
     
     if (current_profile < 0 || current_profile >= USER_PROFILE_COUNT) {
-        current_profile = 1;
+        current_profile = 0;
     }
 }
 
 void ProfileController::save_profiles() {
-    preferences->putFloat("weight0", profiles[0].weight);
-    preferences->putFloat("weight1", profiles[1].weight);
-    preferences->putFloat("weight2", profiles[2].weight);
-
-    preferences->putFloat("time0", profiles[0].time_seconds);
-    preferences->putFloat("time1", profiles[1].time_seconds);
-    preferences->putFloat("time2", profiles[2].time_seconds);
+    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+        char weight_key[8], time_key[8];
+        snprintf(weight_key, sizeof(weight_key), "weight%d", i);
+        snprintf(time_key, sizeof(time_key), "time%d", i);
+        preferences->putFloat(weight_key, profiles[i].weight);
+        preferences->putFloat(time_key, profiles[i].time_seconds);
+    }
 }
 
 void ProfileController::save_current_profile() {

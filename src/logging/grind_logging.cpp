@@ -174,6 +174,7 @@ void GrindLogger::end_grind_session(const char* final_result, float final_weight
     if (is_successful_grind) {
         bool is_weight_mode = (mode == GrindMode::WEIGHT);
         statistics_manager.update_grind_session(
+            current_session->profile_id,
             final_weight,
             current_session->error_grams,
             pulse_count,
@@ -181,6 +182,7 @@ void GrindLogger::end_grind_session(const char* final_result, float final_weight
             current_session->total_motor_on_time_ms
         );
     }
+
 
     // Check if logging is enabled before saving to flash
     Preferences logging_prefs;

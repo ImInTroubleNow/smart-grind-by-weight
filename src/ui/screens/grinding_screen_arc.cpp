@@ -19,13 +19,13 @@ void GrindingScreenArc::create() {
 
     // Profile name label
     profile_label = lv_label_create(screen);
-    lv_label_set_text(profile_label, "DOUBLE");
+    lv_label_set_text(profile_label, "");
     lv_obj_set_style_text_font(profile_label, &lv_font_montserrat_32, 0);
     lv_obj_set_style_text_color(profile_label, lv_color_hex(THEME_COLOR_SECONDARY), 0);
 
     // Target weight label
     target_label = lv_label_create(screen);
-    lv_label_set_text(target_label, "Target: 18.0g");
+    lv_label_set_text(target_label, "");
     lv_obj_set_style_text_font(target_label, &lv_font_montserrat_24, 0);
     lv_obj_set_style_text_color(target_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
     lv_label_set_long_mode(target_label, LV_LABEL_LONG_WRAP);

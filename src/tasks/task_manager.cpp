@@ -127,8 +127,8 @@ bool TaskManager::create_all_tasks() {
     if (!create_grind_control_task()) {
         LOG_BLE("ERROR: Failed to create grind control task\n");
         return false;
-    }
-    
+    }   
+
     if (!create_ui_render_task()) {
         LOG_BLE("ERROR: Failed to create UI render task\n");
         return false;
@@ -444,8 +444,11 @@ void TaskManager::ui_render_task_impl() {
             ui_manager->update();
         }
         
-        // LVGL processing and display update - this contains lv_timer_handler()
-        if (hardware_manager) {
+        // LVGL processing and display update - this contains lv_timer_handler().
+        // Guarded on ui_manager->is_initialized() to avoid a race where this task
+        // (running on Core 1) calls into LVGL while ui_manager.init() is still
+        // concurrently constructing screens/widgets on the main setup thread.
+        if (hardware_manager && ui_manager && ui_manager->is_initialized()) {
             hardware_manager->get_display()->update();
         }
         

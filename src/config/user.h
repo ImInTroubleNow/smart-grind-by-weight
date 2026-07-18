@@ -10,24 +10,30 @@
 //------------------------------------------------------------------------------
 // COFFEE PROFILES
 //------------------------------------------------------------------------------
-#define USER_PROFILE_COUNT 3                                                   // Number of coffee profiles available
-#define USER_PROFILE_NAME_MAX_LENGTH 8                                         // Maximum characters in profile name
+#define USER_PROFILE_COUNT 6                                                    // Number of coffee profiles available
+#define USER_PROFILE_NAME_MAX_LENGTH 10                                          // Maximum characters in profile name
 
 // Default target weights for each profile
-#define USER_SINGLE_ESPRESSO_WEIGHT_G 9.0f                                     // Single espresso default weight
-#define USER_DOUBLE_ESPRESSO_WEIGHT_G 18.0f                                    // Double espresso default weight  
-#define USER_CUSTOM_PROFILE_WEIGHT_G 21.5f                                     // Custom profile default weight
+#define USER_2CUP_WEIGHT_G 14.0f                                                // 2-cup default weight
+#define USER_4CUP_WEIGHT_G 29.0f                                                // 4-cup default weight
+#define USER_6CUP_WEIGHT_G 43.0f                                                // 6-cup default weight
+#define USER_8CUP_WEIGHT_G 58.0f                                                // 8-cup default weight
+#define USER_10CUP_WEIGHT_G 72.0f                                               // 10-cup default weight
+#define USER_CUSTOM_PROFILE_WEIGHT_G 21.5f                                      // Custom profile default weight
 
-#define USER_SINGLE_ESPRESSO_TIME_S 5.0f                                       // Single espresso default grind time
-#define USER_DOUBLE_ESPRESSO_TIME_S 10.0f                                      // Double espresso default grind time
-#define USER_CUSTOM_PROFILE_TIME_S 12.0f                                       // Custom profile default grind time
+#define USER_2CUP_TIME_S 8.0f                                                   // 2-cup default grind time
+#define USER_4CUP_TIME_S 16.0f                                                  // 4-cup default grind time
+#define USER_6CUP_TIME_S 24.0f                                                  // 6-cup default grind time
+#define USER_8CUP_TIME_S 32.0f                                                  // 8-cup default grind time
+#define USER_10CUP_TIME_S 40.0f                                                 // 10-cup default grind time
+#define USER_CUSTOM_PROFILE_TIME_S 12.0f                                        // Custom profile default grind time
 
 // Weight limits
-#define USER_MIN_TARGET_WEIGHT_G 5.0f                                          // Minimum allowed target weight
+#define USER_MIN_TARGET_WEIGHT_G 5.0f                                           // Minimum allowed target weight
 #define USER_MAX_TARGET_WEIGHT_G 1000.0f                                        // Maximum allowed target weight
 
-#define USER_MIN_TARGET_TIME_S 0.5f                                            // Minimum allowed target time
-#define USER_MAX_TARGET_TIME_S 25.0f                                           // Maximum allowed target time
+#define USER_MIN_TARGET_TIME_S 0.5f                                             // Minimum allowed target time
+#define USER_MAX_TARGET_TIME_S 60.0f                                           // Maximum allowed target time
 
 //------------------------------------------------------------------------------
 // WEIGHT/TIME ADJUSTMENTS

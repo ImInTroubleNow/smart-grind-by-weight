@@ -524,7 +524,7 @@ void MenuScreen::create_stats_page(lv_obj_t* parent) {
 
     create_separator(parent, "Lifetime Statistics");
     create_data_label(parent, "Total Grinds:", &stat_total_grinds_label, true);
-    create_data_label(parent, "Shots (S/D/C):", &stat_shots_label, true);
+    create_data_label(parent, "Shots (2/4/6/8/10/C):", &stat_shots_label, true);
     create_data_label(parent, "Motor Runtime:", &stat_motor_runtime_label, true);
     create_data_label(parent, "Device Uptime:", &stat_device_uptime_label, true);
     create_data_label(parent, "Total Weight:", &stat_total_weight_label, true);
@@ -774,12 +774,15 @@ void MenuScreen::refresh_statistics(bool show_overlay) {
         // Lifetime statistics
         set_label_text_int(stat_total_grinds_label, statistics_manager.get_total_grinds());
 
-        // Shot type breakdown (Single/Double/Custom)
-        char shot_text[32];
-        snprintf(shot_text, sizeof(shot_text), "%lu / %lu / %lu",
-                 statistics_manager.get_single_shots(),
-                 statistics_manager.get_double_shots(),
-                 statistics_manager.get_custom_shots());
+        // Shot type breakdown (2/4/6/8/10 Cup / Custom)
+        char shot_text[48];
+        snprintf(shot_text, sizeof(shot_text), "%lu/%lu/%lu/%lu/%lu/%lu",
+                 statistics_manager.get_profile_shots(0),
+                 statistics_manager.get_profile_shots(1),
+                 statistics_manager.get_profile_shots(2),
+                 statistics_manager.get_profile_shots(3),
+                 statistics_manager.get_profile_shots(4),
+                 statistics_manager.get_profile_shots(5));
         lv_label_set_text(stat_shots_label, shot_text);
 
         // Motor runtime (convert seconds to hours:minutes)

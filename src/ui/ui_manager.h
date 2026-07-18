@@ -124,6 +124,7 @@ public:
     
     // Static instance getter
     static UIManager* get_instance() { return instance; }
+    bool is_initialized() const { return initialized; }
     
     // Public accessors for static callbacks
     ProfileController* get_profile_controller() { return profile_controller; }

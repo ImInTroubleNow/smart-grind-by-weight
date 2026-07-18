@@ -21,7 +21,7 @@ void GrindingScreenChart::create() {
 
     // Profile name label
     profile_label = lv_label_create(screen);
-    lv_label_set_text(profile_label, "DOUBLE");
+    lv_label_set_text(profile_label, "");
     lv_obj_set_style_text_font(profile_label, &lv_font_montserrat_32, 0);
     lv_obj_set_style_text_color(profile_label, lv_color_hex(THEME_COLOR_SECONDARY), 0);
 
@@ -39,7 +39,7 @@ void GrindingScreenChart::create() {
     lv_obj_set_style_pad_all(chart, 0, LV_PART_MAIN);
     
     // Initialize data tracking
-    target_weight_value = 18.0f;
+    target_weight_value = USER_CUSTOM_PROFILE_WEIGHT_G;
     chart_start_time_ms = 0;
     predicted_grind_time_ms = 0;
     predicted_chart_points = 0;
@@ -103,7 +103,7 @@ void GrindingScreenChart::create() {
     lv_span_t* separator_span = lv_spangroup_add_span(weight_spangroup);
     lv_style_set_text_font(lv_span_get_style(separator_span), &lv_font_montserrat_24);
     lv_style_set_text_color(lv_span_get_style(separator_span), lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
-    lv_span_set_text(separator_span, " / 18.0g");
+    lv_span_set_text(separator_span, "");
     
     lv_spangroup_refresh(weight_spangroup);
     
