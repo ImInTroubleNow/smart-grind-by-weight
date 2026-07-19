@@ -28,17 +28,17 @@ The Smart Grind-by-Weight is a user-friendly, touch interface-driven, highly acc
 
 **Upgrade cost:** €30-40 in parts  
 **Target accuracy:** ±0.03g tolerance  
-**No regrets**: No permanent modifications, and original grind-by-time mode is also available
+**No regrets**: No permanent modifications, and a Time Only mode lets you grind purely by time - no scale or calibration required at all
 
 ---
 
 ## ✨ Features
 
-- **User-friendly interface** with 3 profiles: Single, Double, Custom
+- **User-friendly interface** with 6 profiles: 2/4/6/8/10 Cups, plus a Custom profile
 - **Beautiful display** with simple graphics or detailed charts (easily switchable)
 - **High accuracy**: ±0.03g error tolerance  
 - **Zero-shot learning**: Algorithm adapts instantly to any grind size, bean setting, humidity etc. without manual tuning
-- **Original timed run preserved** – there is a setting to enable the original Grind-By-Time mode
+- **Flexible grind modes** – swipe between grind-by-weight and grind-by-time per profile, or lock into **Time Only mode** to skip scale calibration entirely (handy if your load cell isn't hooked up yet, or at all)
 - **BLE OTA updates** for firmware
 - **Advanced analytics** using BLE data transfer and Python Streamlit reports
 - **For Eureka**: No permanent modifications needed - just swap the screen and add 3D printed parts
