@@ -48,13 +48,30 @@ void ProfileController::load_profiles() {
         USER_2CUP_TIME_S, USER_4CUP_TIME_S, USER_6CUP_TIME_S,
         USER_8CUP_TIME_S, USER_10CUP_TIME_S, USER_CUSTOM_PROFILE_TIME_S
     };
-    
+
+    // Reused NVS slots can carry stale values from an older profile scheme
+    // (e.g. index 0 used to be a "SINGLE" espresso profile). When the
+    // compiled-in defaults change version, reset all saved weights/times
+    // back to the new defaults once; normal edits after that persist as usual.
+    int stored_version = preferences->getInt("profile_ver", -1);
+    bool reset_to_defaults = (stored_version != USER_PROFILE_DEFAULTS_VERSION);
+    if (reset_to_defaults) {
+        preferences->putInt("profile_ver", USER_PROFILE_DEFAULTS_VERSION);
+    }
+
     for (int i = 0; i < USER_PROFILE_COUNT; i++) {
         char weight_key[8], time_key[8];
         snprintf(weight_key, sizeof(weight_key), "weight%d", i);
         snprintf(time_key, sizeof(time_key), "time%d", i);
-        profiles[i].weight = preferences->getFloat(weight_key, default_weights[i]);
-        profiles[i].time_seconds = preferences->getFloat(time_key, default_times[i]);
+        if (reset_to_defaults) {
+            profiles[i].weight = default_weights[i];
+            profiles[i].time_seconds = default_times[i];
+            preferences->putFloat(weight_key, default_weights[i]);
+            preferences->putFloat(time_key, default_times[i]);
+        } else {
+            profiles[i].weight = preferences->getFloat(weight_key, default_weights[i]);
+            profiles[i].time_seconds = preferences->getFloat(time_key, default_times[i]);
+        }
     }
     
     // Load grind mode (default to WEIGHT if not set)

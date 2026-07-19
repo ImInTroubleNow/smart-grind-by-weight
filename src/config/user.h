@@ -12,20 +12,21 @@
 //------------------------------------------------------------------------------
 #define USER_PROFILE_COUNT 6                                                    // Number of coffee profiles available
 #define USER_PROFILE_NAME_MAX_LENGTH 10                                          // Maximum characters in profile name
+#define USER_PROFILE_DEFAULTS_VERSION 2                                         // Bump to force a one-time reset of saved profile weights/times to current defaults
 
 // Default target weights for each profile
-#define USER_2CUP_WEIGHT_G 14.0f                                                // 2-cup default weight
-#define USER_4CUP_WEIGHT_G 29.0f                                                // 4-cup default weight
-#define USER_6CUP_WEIGHT_G 43.0f                                                // 6-cup default weight
-#define USER_8CUP_WEIGHT_G 58.0f                                                // 8-cup default weight
-#define USER_10CUP_WEIGHT_G 72.0f                                               // 10-cup default weight
+#define USER_2CUP_WEIGHT_G 15.6f                                                // 2-cup default weight (250mL @ 1:16 ratio)
+#define USER_4CUP_WEIGHT_G 31.2f                                                // 4-cup default weight (500mL @ 1:16 ratio)
+#define USER_6CUP_WEIGHT_G 46.8f                                                // 6-cup default weight (750mL @ 1:16 ratio)
+#define USER_8CUP_WEIGHT_G 62.5f                                                // 8-cup default weight (1L @ 1:16 ratio)
+#define USER_10CUP_WEIGHT_G 78.1f                                               // 10-cup default weight (1.25L @ 1:16 ratio)
 #define USER_CUSTOM_PROFILE_WEIGHT_G 21.5f                                      // Custom profile default weight
 
-#define USER_2CUP_TIME_S 8.0f                                                   // 2-cup default grind time
-#define USER_4CUP_TIME_S 16.0f                                                  // 4-cup default grind time
-#define USER_6CUP_TIME_S 24.0f                                                  // 6-cup default grind time
-#define USER_8CUP_TIME_S 32.0f                                                  // 8-cup default grind time
-#define USER_10CUP_TIME_S 40.0f                                                 // 10-cup default grind time
+#define USER_2CUP_TIME_S 8.7f                                                   // 2-cup default grind time (weight_g * 0.555)
+#define USER_4CUP_TIME_S 17.3f                                                  // 4-cup default grind time (weight_g * 0.555)
+#define USER_6CUP_TIME_S 26.0f                                                  // 6-cup default grind time (weight_g * 0.555)
+#define USER_8CUP_TIME_S 34.7f                                                  // 8-cup default grind time (weight_g * 0.555)
+#define USER_10CUP_TIME_S 43.3f                                                 // 10-cup default grind time (weight_g * 0.555)
 #define USER_CUSTOM_PROFILE_TIME_S 12.0f                                        // Custom profile default grind time
 
 // Weight limits

@@ -36,6 +36,9 @@ void ReadyUIController::handle_tab_change(int tab) {
     }
 
     ui_manager_->current_tab = tab;
+    if (tab < USER_PROFILE_COUNT) {
+        ui_manager_->ready_screen.update_active_dot(tab);
+    }
     if (ui_manager_->profile_controller && tab < USER_PROFILE_COUNT) {
         ui_manager_->profile_controller->set_current_profile(tab);
         refresh_profiles();
