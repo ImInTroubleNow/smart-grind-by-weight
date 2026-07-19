@@ -112,7 +112,10 @@ void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grin
     LOG_BLE("[%lums CONTROLLER] start_grind() called with target=%.1fg, time=%lums, mode=%s\n",
             millis(), target, (unsigned long)time_ms, grind_mode == GrindMode::TIME ? "TIME" : "WEIGHT");
     if (!weight_sensor || !grinder) return;
-    if (weight_sensor->has_hardware_fault()) {
+    // Weight mode genuinely needs load cell data to control the grind, so a hardware
+    // fault blocks it. Time mode doesn't use weight feedback for control (see TARING
+    // bypass below), so it's allowed to proceed even with no functioning load cell.
+    if (grind_mode == GrindMode::WEIGHT && weight_sensor->has_hardware_fault()) {
         LOG_BLE("ERROR: Cannot start grind - load cell hardware fault detected (%d)\n",
                 static_cast<int>(weight_sensor->get_hardware_fault()));
         return;
@@ -339,6 +342,18 @@ void GrindController::update() {
         }
             
         case GrindPhase::TARING:
+            if (weight_sensor->has_hardware_fault()) {
+                // No functioning load cell (expected for Time Only grinding with no
+                // scale present). Taring depends on real ADC samples arriving to
+                // complete, which will never happen here, so skip straight to
+                // grinding instead of stalling until the grind timeout.
+                if (!grinder->is_grinding()) {
+                    grinder->start();
+                }
+                time_grind_start_ms = loop_data.now;
+                switch_phase(GrindPhase::TIME_GRINDING, loop_data);
+                break;
+            }
             if (weight_sensor->start_nonblocking_tare()) {
                 LOG_LOADCELL_DEBUG("Non-blocking tare started\n");
                 switch_phase(GrindPhase::TARE_CONFIRM, loop_data);
@@ -804,6 +819,18 @@ bool GrindController::check_timeout() const {
 
 bool GrindController::is_active() const {
     return phase != GrindPhase::IDLE;
+}
+
+float GrindController::get_time_remaining_seconds() const {
+    if (mode != GrindMode::TIME || target_time_ms == 0 || time_grind_start_ms == 0) {
+        return static_cast<float>(target_time_ms) / 1000.0f;
+    }
+
+    unsigned long elapsed = millis() - time_grind_start_ms;
+    if (elapsed >= target_time_ms) {
+        return 0.0f;
+    }
+    return static_cast<float>(target_time_ms - elapsed) / 1000.0f;
 }
 
 int GrindController::get_progress_percent() const {

@@ -353,30 +353,32 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
     // Mode Selection separator/label
     create_separator(parent, "Mode Selection");
 
-    // Radio button group for grind mode selection at top
-    const char* grind_modes[] = {"Weight", "Time"};
+    // Radio button group for grind mode selection at top.
+    // Stacked in a column (rather than side-by-side) since "Weight & Time" is
+    // too wide to fit legibly next to a second button on this 280px display.
+    const char* grind_modes[] = {"Weight & Time", "Time Only"};
+    // Time Only highlights in accent blue when selected, matching the
+    // start button's accent color while grinding in time mode.
+    const uint32_t grind_mode_colors[] = {THEME_COLOR_PRIMARY, THEME_COLOR_ACCENT};
     grind_mode_radio_group = create_radio_button_group(
         parent,
         grind_modes,
         2,
-        LV_FLEX_FLOW_ROW,
-        0,  // Weight initially selected
-        135, 100,  // Width, Height
+        LV_FLEX_FLOW_COLUMN,
+        0,  // Weight & Time initially selected
+        240, 70,  // Width, Height
         grind_mode_callback,
-        this
+        this,
+        grind_mode_colors
     );
 
-    // Descriptive label for swipe functionality
-    lv_obj_t* swipe_desc_label = lv_label_create(parent);
-    lv_label_set_text(swipe_desc_label, "Enable swiping vertically to switch between Weight/Time modes");
-    lv_obj_set_style_text_font(swipe_desc_label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(swipe_desc_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_margin_bottom(swipe_desc_label, 10, 0);
-    lv_label_set_long_mode(swipe_desc_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(swipe_desc_label, 260);
+    create_description_label(parent, "Time Only skips weight calibration and disables grind-by-weight until switched back here.");
 
-    // Swipe toggle using existing pattern
-    create_toggle_row(parent, "Swipe", &grind_mode_swipe_toggle);
+    // Swipe toggle using existing pattern - hidden while Time Only is locked in,
+    // since there's no weight mode left to swipe to.
+    grind_mode_swipe_row = create_toggle_row(parent, "Swipe", &grind_mode_swipe_toggle);
+    grind_mode_swipe_desc_label = create_description_label(
+        parent, "Swipe vertically on the Ready screen to switch between Weight and Time modes.");
 
     // Automatic actions section
     create_separator(parent, "Automation");
@@ -1138,23 +1140,25 @@ void MenuScreen::update_grind_mode_toggles() {
     bool swipe_enabled = swipe_prefs.getBool("enabled", false);
     swipe_prefs.end();
 
-    // Read current grind mode from main grinder preferences using hardware manager
-    int mode_index = 0; // Default to Weight (index 0)
+    // Read Time Only lock + purge settings from main grinder preferences using hardware manager
+    bool time_only_mode = false;
     int grinder_purge_mode_index = GRIND_PURGE_MODE_DEFAULT;  // Default to Purge
     float grinder_purge_amount_g = GRIND_PURGE_AMOUNT_DEFAULT_G;  // Default to 1.0g
     if (hardware_manager) {
         Preferences* main_prefs = hardware_manager->get_preferences();
         if (main_prefs) {
-            int stored_mode = main_prefs->getInt("grind_mode", static_cast<int>(GrindMode::WEIGHT));
-            mode_index = (stored_mode == static_cast<int>(GrindMode::TIME)) ? 1 : 0;
+            time_only_mode = main_prefs->getBool("time_only_mode", false);
             grinder_purge_mode_index = main_prefs->getInt(GrindController::PREF_KEY_GRINDER_MODE, GRIND_PURGE_MODE_DEFAULT);
             grinder_purge_amount_g = main_prefs->getFloat(GrindController::PREF_KEY_GRINDER_AMOUNT_G, GRIND_PURGE_AMOUNT_DEFAULT_G);
         }
     }
+    int mode_index = time_only_mode ? 1 : 0;
 
     if (grind_mode_radio_group) {
         radio_button_group_set_selection(grind_mode_radio_group, mode_index);
     }
+
+    set_swipe_row_visible(!time_only_mode);
 
     if (grind_mode_swipe_toggle) {
         if (swipe_enabled) {
@@ -1230,4 +1234,21 @@ void MenuScreen::update_grind_mode_toggles() {
     }
 
     update_grind_freshness_hours_label(freshness_hours);
+}
+
+void MenuScreen::set_swipe_row_visible(bool visible) {
+    if (grind_mode_swipe_row) {
+        if (visible) {
+            lv_obj_clear_flag(grind_mode_swipe_row, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(grind_mode_swipe_row, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    if (grind_mode_swipe_desc_label) {
+        if (visible) {
+            lv_obj_clear_flag(grind_mode_swipe_desc_label, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(grind_mode_swipe_desc_label, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
 }

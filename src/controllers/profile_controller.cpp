@@ -33,7 +33,8 @@ void ProfileController::init(Preferences* prefs) {
     
     // Initialize default grind mode
     current_grind_mode = GrindMode::WEIGHT;
-    
+    time_only_mode = false;
+
     load_profiles();
 }
 
@@ -77,7 +78,10 @@ void ProfileController::load_profiles() {
     // Load grind mode (default to WEIGHT if not set)
     int stored_mode = preferences->getInt("grind_mode", static_cast<int>(GrindMode::WEIGHT));
     current_grind_mode = static_cast<GrindMode>(stored_mode);
-    
+
+    // Load Time Only lock (default to false/unlocked if not set)
+    time_only_mode = preferences->getBool("time_only_mode", false);
+
     if (current_profile < 0 || current_profile >= USER_PROFILE_COUNT) {
         current_profile = 0;
     }
@@ -179,4 +183,13 @@ void ProfileController::set_grind_mode(GrindMode mode) {
 
 void ProfileController::save_grind_mode() {
     preferences->putInt("grind_mode", static_cast<int>(current_grind_mode));
+}
+
+void ProfileController::set_time_only_mode(bool enabled) {
+    time_only_mode = enabled;
+    preferences->putBool("time_only_mode", enabled);
+
+    // Locking in Time Only always forces TIME; unlocking always returns to WEIGHT
+    // as the sane default starting mode.
+    set_grind_mode(enabled ? GrindMode::TIME : GrindMode::WEIGHT);
 }

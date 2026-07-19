@@ -216,6 +216,28 @@ void GrindingScreenChart::update_current_weight(float weight) {
     }
 }
 
+void GrindingScreenChart::update_countdown(float seconds_remaining) {
+    if (seconds_remaining < 0.0f) {
+        seconds_remaining = 0.0f;
+    }
+    int total_seconds = static_cast<int>(seconds_remaining + 0.5f);
+    int minutes = total_seconds / 60;
+    int secs = total_seconds % 60;
+
+    char countdown_text[16];
+    if (minutes > 0) {
+        snprintf(countdown_text, sizeof(countdown_text), "%d:%02d", minutes, secs);
+    } else {
+        snprintf(countdown_text, sizeof(countdown_text), "%ds", secs);
+    }
+
+    lv_span_t* current_span = lv_spangroup_get_child(weight_spangroup, 0);
+    if (current_span) {
+        lv_span_set_text(current_span, countdown_text);
+        lv_spangroup_refresh(weight_spangroup);
+    }
+}
+
 void GrindingScreenChart::update_tare_display() {
     char target_text[16];
     snprintf(target_text, sizeof(target_text), " / " SYS_WEIGHT_DISPLAY_FORMAT, target_weight_value);

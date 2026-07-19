@@ -61,6 +61,8 @@ private:
     // Grind mode tab elements
     lv_obj_t* grind_mode_radio_group;
     lv_obj_t* grind_mode_swipe_toggle;
+    lv_obj_t* grind_mode_swipe_row;
+    lv_obj_t* grind_mode_swipe_desc_label;
     lv_obj_t* auto_start_toggle;
     lv_obj_t* auto_return_toggle;
     lv_obj_t* grinder_purge_mode_radio_group;
@@ -113,6 +115,7 @@ public:
     void update_bluetooth_startup_toggle();
     void update_logging_toggle();
     void update_grind_mode_toggles();
+    void set_swipe_row_visible(bool visible);
     void update_grinder_purge_amount_label(float amount_g);
     void update_grind_freshness_hours_label(float hours);
     void reset_scale_display();

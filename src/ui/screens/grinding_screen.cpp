@@ -98,6 +98,11 @@ void GrindingScreen::update_current_weight(float weight) {
     chart_screen.update_current_weight(weight);
 }
 
+void GrindingScreen::update_countdown(float seconds_remaining) {
+    arc_screen.update_countdown(seconds_remaining);
+    chart_screen.update_countdown(seconds_remaining);
+}
+
 void GrindingScreen::update_tare_display() {
     arc_screen.update_tare_display();
     chart_screen.update_tare_display();

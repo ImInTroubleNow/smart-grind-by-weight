@@ -72,6 +72,10 @@ void ReadyUIController::toggle_mode() {
         return;
     }
 
+    if (ui_manager_->profile_controller && ui_manager_->profile_controller->is_time_only_mode()) {
+        return;
+    }
+
     Preferences prefs;
     prefs.begin("swipe", true); // read-only
     bool swipe_enabled = prefs.getBool("enabled", false);

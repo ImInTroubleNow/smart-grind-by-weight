@@ -164,13 +164,13 @@ void GrindingUIController::update(UIState current_state) {
             WeightSensor* weight_sensor = ui_manager_->hardware_manager->get_weight_sensor();
             if (weight_sensor) {
                 float current_weight = weight_sensor->get_display_weight();
-                ui_manager_->grinding_screen.update_current_weight(current_weight);
+                update_weight_display(current_weight);
             }
             ui_manager_->grinding_screen.update_progress(final_grind_progress_);
             break;
         }
         case UIState::GRIND_TIMEOUT: {
-            ui_manager_->grinding_screen.update_current_weight(error_grind_weight_);
+            update_weight_display(error_grind_weight_);
             ui_manager_->grinding_screen.update_progress(error_grind_progress_);
             char error_display[64];
             const char* message = error_message_[0] ? error_message_ : "Error";
@@ -387,6 +387,17 @@ void GrindingUIController::update_grinding_targets() {
     }
 }
 
+void GrindingUIController::update_weight_display(float weight) {
+    if (!ui_manager_) return;
+
+    bool time_only = ui_manager_->profile_controller && ui_manager_->profile_controller->is_time_only_mode();
+    if (time_only && ui_manager_->grind_controller) {
+        ui_manager_->grinding_screen.update_countdown(ui_manager_->grind_controller->get_time_remaining_seconds());
+    } else {
+        ui_manager_->grinding_screen.update_current_weight(weight);
+    }
+}
+
 void GrindingUIController::reset_grind_complete_timer() {
     if (!ui_manager_ || !ui_manager_->state_machine) {
         return;
@@ -424,7 +435,7 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
                 chart_updates_enabled_ = true;
                 update_grinding_targets();
                 if (weight_sensor) {
-                    ui_manager_->grinding_screen.update_current_weight(weight_sensor->get_display_weight());
+                    update_weight_display(weight_sensor->get_display_weight());
                 }
                 ui_manager_->grinding_screen.update_progress(0);
                 ui_manager_->switch_to_state(UIState::GRINDING);
@@ -442,7 +453,7 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
             if (event_data.show_taring_text) {
                 ui_manager_->grinding_screen.update_tare_display();
             } else {
-                ui_manager_->grinding_screen.update_current_weight(event_data.current_weight);
+                update_weight_display(event_data.current_weight);
                 ui_manager_->grinding_screen.update_progress(event_data.progress_percent);
 
                 if (chart_updates_enabled_ &&
@@ -462,7 +473,7 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
             } else {
                 ui_manager_->current_mode = event_data.mode;
                 ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
-                ui_manager_->grinding_screen.update_current_weight(event_data.current_weight);
+                update_weight_display(event_data.current_weight);
                 ui_manager_->grinding_screen.update_progress(event_data.progress_percent);
 
                 if (chart_updates_enabled_ &&
@@ -555,7 +566,7 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
         case UIGrindEvent::PULSE_COMPLETED:
             LOG_BLE("[UIManager] Pulse #%d completed - weight: %.2fg\n",
                     event_data.pulse_count, event_data.current_weight);
-            ui_manager_->grinding_screen.update_current_weight(event_data.current_weight);
+            update_weight_display(event_data.current_weight);
             update_button_layout();
             break;
         default:
@@ -598,7 +609,7 @@ void GrindingUIController::enter_grinding_state() {
     chart_updates_enabled_ = true;
     update_grinding_targets();
     if (weight_sensor) {
-        ui_manager_->grinding_screen.update_current_weight(weight_sensor->get_display_weight());
+        update_weight_display(weight_sensor->get_display_weight());
     }
     ui_manager_->grinding_screen.update_progress(0);
     if (grind_button_) {
@@ -612,7 +623,7 @@ void GrindingUIController::enter_grind_complete_state() {
     }
     ui_manager_->grinding_screen.update_profile_name(ui_manager_->profile_controller->get_current_name());
     ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
-    ui_manager_->grinding_screen.update_current_weight(final_grind_weight_);
+    update_weight_display(final_grind_weight_);
     ui_manager_->grinding_screen.update_progress(final_grind_progress_);
 }
 
@@ -626,7 +637,7 @@ void GrindingUIController::enter_grind_timeout_state() {
     const char* message = error_message_[0] ? error_message_ : "Error";
     std::snprintf(error_display, sizeof(error_display), "%s", message);
     ui_manager_->grinding_screen.update_target_weight_text(error_display);
-    ui_manager_->grinding_screen.update_current_weight(error_grind_weight_);
+    update_weight_display(error_grind_weight_);
     ui_manager_->grinding_screen.update_progress(error_grind_progress_);
 }
 

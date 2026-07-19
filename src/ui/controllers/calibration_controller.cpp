@@ -135,6 +135,20 @@ void CalibrationUIController::handle_ok() {
 void CalibrationUIController::handle_cancel() {
     if (!ui_manager_) return;
 
+    // Calibration is advisory throughout the app (never a hard block elsewhere),
+    // so cancelling still unlocks Weight & Time - just uncalibrated, same as
+    // grinding by weight anywhere else without having calibrated.
+    if (pending_time_only_unlock_) {
+        pending_time_only_unlock_ = false;
+        if (ui_manager_->get_profile_controller()) {
+            ui_manager_->get_profile_controller()->set_time_only_mode(false);
+        }
+        ui_manager_->current_mode = GrindMode::WEIGHT;
+        if (ui_manager_->ready_controller_) {
+            ui_manager_->ready_controller_->refresh_profiles();
+        }
+    }
+
     reset_noise_check_state();
     baseline_adc_value_ = 0;
     ui_manager_->set_current_tab(3);
@@ -301,6 +315,17 @@ void CalibrationUIController::complete_calibration() {
 
     if (weight_sensor) {
         weight_sensor->set_calibrated(true);
+    }
+
+    if (pending_time_only_unlock_) {
+        pending_time_only_unlock_ = false;
+        if (ui_manager_->get_profile_controller()) {
+            ui_manager_->get_profile_controller()->set_time_only_mode(false);
+        }
+        ui_manager_->current_mode = GrindMode::WEIGHT;
+        if (ui_manager_->ready_controller_) {
+            ui_manager_->ready_controller_->refresh_profiles();
+        }
     }
 
     reset_noise_check_state();

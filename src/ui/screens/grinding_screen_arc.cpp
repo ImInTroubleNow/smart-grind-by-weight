@@ -99,6 +99,23 @@ void GrindingScreenArc::update_current_weight(float weight) {
     lv_label_set_text(weight_label, weight_text);
 }
 
+void GrindingScreenArc::update_countdown(float seconds_remaining) {
+    if (seconds_remaining < 0.0f) {
+        seconds_remaining = 0.0f;
+    }
+    int total_seconds = static_cast<int>(seconds_remaining + 0.5f);
+    int minutes = total_seconds / 60;
+    int secs = total_seconds % 60;
+
+    char countdown_text[16];
+    if (minutes > 0) {
+        snprintf(countdown_text, sizeof(countdown_text), "%d:%02d", minutes, secs);
+    } else {
+        snprintf(countdown_text, sizeof(countdown_text), "%ds", secs);
+    }
+    lv_label_set_text(weight_label, countdown_text);
+}
+
 void GrindingScreenArc::update_tare_display() {
     lv_label_set_text(weight_label, "TARE");
     lv_arc_set_value(progress_arc, 0);  // Reset arc to 0 during taring

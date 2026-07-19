@@ -14,6 +14,7 @@ private:
     Profile profiles[USER_PROFILE_COUNT];
     int current_profile;
     GrindMode current_grind_mode;
+    bool time_only_mode;
     Preferences* preferences;
 
 public:
@@ -48,4 +49,8 @@ public:
     void set_grind_mode(GrindMode mode);
     GrindMode get_grind_mode() const { return current_grind_mode; }
     void save_grind_mode();
+
+    // Time Only mode: locks grinding to TIME and skips load-cell calibration entirely
+    bool is_time_only_mode() const { return time_only_mode; }
+    void set_time_only_mode(bool enabled);
 };

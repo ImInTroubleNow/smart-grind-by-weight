@@ -329,20 +329,45 @@ void MenuUIController::handle_grind_mode_radio_button() {
     int selected_index = radio_button_group_get_selection(radio_group);
     if (selected_index < 0) return;
 
-    GrindMode new_mode = (selected_index == 0) ? GrindMode::WEIGHT : GrindMode::TIME;
-    ui_manager_->profile_controller->set_grind_mode(new_mode);
-    ui_manager_->current_mode = new_mode;
+    bool want_time_only = (selected_index == 1);
+    bool currently_time_only = ui_manager_->profile_controller->is_time_only_mode();
+    if (want_time_only == currently_time_only) return;
+
+    if (want_time_only) {
+        ui_manager_->profile_controller->set_time_only_mode(true);
+        ui_manager_->current_mode = GrindMode::TIME;
+        ui_manager_->menu_screen.set_swipe_row_visible(false);
+        LOG_DEBUG_PRINTLN("Time Only mode locked in via radio button");
+    } else {
+        auto* sensor = ui_manager_->get_hardware_manager() ? ui_manager_->get_hardware_manager()->get_weight_sensor() : nullptr;
+        bool is_calibrated = sensor && sensor->is_calibrated();
+
+        if (!is_calibrated) {
+            // Revert the radio to Time Only until calibration actually completes.
+            radio_button_group_set_selection(radio_group, 1);
+            if (ui_manager_->calibration_controller_) {
+                ui_manager_->calibration_controller_->request_unlock_calibration();
+            }
+            LOG_DEBUG_PRINTLN("Weight & Time requested but uncalibrated - launching calibration wizard");
+            ui_manager_->switch_to_state(UIState::CALIBRATION);
+            return;
+        }
+
+        ui_manager_->profile_controller->set_time_only_mode(false);
+        ui_manager_->current_mode = GrindMode::WEIGHT;
+        ui_manager_->menu_screen.set_swipe_row_visible(true);
+        LOG_DEBUG_PRINTLN("Weight & Time mode unlocked via radio button");
+    }
+
     if (ui_manager_->ready_controller_) {
         ui_manager_->ready_controller_->refresh_profiles();
     }
-    ui_manager_->edit_target = get_current_profile_target(*ui_manager_->profile_controller, new_mode);
+    ui_manager_->edit_target = get_current_profile_target(*ui_manager_->profile_controller, ui_manager_->current_mode);
     if (ui_manager_->state_machine->is_state(UIState::EDIT)) {
         if (ui_manager_->edit_controller_) {
             ui_manager_->edit_controller_->update_display();
         }
     }
-
-    LOG_DEBUG_PRINTLN(selected_index == 0 ? "Grind mode set to WEIGHT via radio button" : "Grind mode set to TIME via radio button");
 }
 
 void MenuUIController::handle_auto_start_toggle() {

@@ -22,6 +22,7 @@ public:
     void update_target_weight_text(const char* text) override;
     void update_target_time(float seconds);
     void update_current_weight(float weight) override;
+    void update_countdown(float seconds_remaining);
     void update_tare_display() override;
     void update_progress(int percent) override;
     void set_time_mode(bool enabled);

@@ -59,12 +59,14 @@ python3 tools/grinder.py analyze
 **Time Mode Pulses:** Split-button completion screen (OK + PULSE), `TIME_ADDITIONAL_PULSE` phase, 100ms duration
 
 **Grind Settings:** Configurable through Menu → Grind Settings page
-- **Mode Selection**: Radio buttons for Weight/Time mode selection
-- **Swipe Gestures Toggle**: Enable/disable vertical swipe gestures for mode switching (default: disabled)
+- **Mode Selection**: Radio buttons — "Weight & Time" (both modes available, swipe to switch) vs "Time Only" (locked to time-based grinding)
+- **Time Only mode**: Skips the load-cell calibration boot gate entirely (boots straight to READY even if never calibrated) and disables grind-by-weight until switched back. The Swipe row (toggle + description) is hidden while locked in, since there's no weight mode to swipe to.
+- **Switching back to Weight & Time**: Immediate if the load cell is already calibrated; otherwise launches the calibration wizard as a courtesy — completing it or cancelling out both unlock Weight & Time (calibration is advisory app-wide, never a hard block)
+- **Swipe Gestures Toggle**: Enable/disable vertical swipe gestures for mode switching within Weight & Time mode (default: disabled)
 - **Automation**: Start on Cup and Return on Removal toggles
 - **Purging**: Radio buttons (Prime/Purge) and Amount slider (0.1g-5.0g)
-- **Preferences**: `swipe.enabled` (boolean), `grind_mode` (0=Weight, 1=Time), `chute_mode` (0=Prime, 1=Purge), `chute_amount_g` (float)
-- **Behavior**: Swipe gestures only work when enabled; direct mode selection always works
+- **Preferences**: `swipe.enabled` (boolean), `grind_mode` (0=Weight, 1=Time), `time_only_mode` (boolean, default false — locks out Weight and skips calibration at boot), `chute_mode` (0=Prime, 1=Purge), `chute_amount_g` (float)
+- **Behavior**: Swipe gestures only work when enabled and Weight & Time mode is active; direct mode selection always works
 
 **Color Scheme (RGB565):**
 - `COLOR_PRIMARY`: 0xFF0000 (Red) - Primary theme color

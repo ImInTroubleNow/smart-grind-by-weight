@@ -227,6 +227,7 @@ public:
     bool is_control_loop_paused() const { return control_loop_paused_; }
     float get_target_weight() const { return target_weight; }
     uint32_t get_target_time_ms() const { return target_time_ms; }
+    float get_time_remaining_seconds() const;
     static constexpr const char* PREF_KEY_PRIME_ENABLED = "prime_enabled";
     static constexpr const char* PREF_KEY_GRINDER_MODE = "grinder_mode";
     static constexpr const char* PREF_KEY_GRINDER_AMOUNT_G = "grinder_amount_g";

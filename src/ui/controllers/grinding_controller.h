@@ -42,6 +42,11 @@ private:
     void start_grind_timeout_timer();
     void cancel_timers();
 
+    // Routes the central grinding-screen readout to a countdown while Time Only
+    // is locked in (no functioning load cell to report weight from), otherwise
+    // shows the dispensed weight as usual.
+    void update_weight_display(float weight);
+
     static void grind_complete_timer_cb(lv_timer_t* timer);
     static void grind_timeout_timer_cb(lv_timer_t* timer);
 

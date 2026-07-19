@@ -152,6 +152,7 @@ lv_obj_t* create_data_label(lv_obj_t* parent, const char* name, lv_obj_t** value
 // Radio button group data structure
 struct RadioButtonGroupData {
     lv_obj_t** buttons;
+    uint32_t* selected_colors;
     int button_count;
     int selected_index;
     radio_button_callback_t callback;
@@ -187,7 +188,7 @@ static void radio_button_event_handler(lv_event_t* e) {
     for (int i = 0; i < data->button_count; i++) {
         if (data->buttons[i] && lv_obj_is_valid(data->buttons[i])) {
             if (i == clicked_index) {
-                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(THEME_COLOR_PRIMARY), 0);
+                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(data->selected_colors[i]), 0);
             } else {
                 lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(THEME_COLOR_NEUTRAL), 0);
             }
@@ -225,6 +226,10 @@ static void radio_button_group_delete_handler(lv_event_t* e) {
         free(data->buttons);
         data->buttons = nullptr;
     }
+    if (data->selected_colors) {
+        free(data->selected_colors);
+        data->selected_colors = nullptr;
+    }
     free(data);
 
     Serial.printf("[%lums RADIO_BTN] Radio button group freed successfully\n", millis());
@@ -239,8 +244,9 @@ lv_obj_t* create_radio_button_group(
     int32_t button_width,
     int32_t button_height,
     radio_button_callback_t callback,
-    void* user_data) {
-    
+    void* user_data,
+    const uint32_t* selected_colors) {
+
     // Create container
     lv_obj_t* group_container = lv_obj_create(parent);
     lv_obj_set_style_bg_opa(group_container, LV_OPA_TRANSP, 0);
@@ -266,20 +272,24 @@ lv_obj_t* create_radio_button_group(
     // Allocate data structure
     RadioButtonGroupData* data = (RadioButtonGroupData*)malloc(sizeof(RadioButtonGroupData));
     data->buttons = (lv_obj_t**)malloc(sizeof(lv_obj_t*) * option_count);
+    data->selected_colors = (uint32_t*)malloc(sizeof(uint32_t) * option_count);
+    for (int i = 0; i < option_count; i++) {
+        data->selected_colors[i] = selected_colors ? selected_colors[i] : THEME_COLOR_PRIMARY;
+    }
     data->button_count = option_count;
     data->selected_index = initial_selection;
     data->callback = callback;
     data->user_data = user_data;
-    
+
     // Calculate button width if auto
     int32_t actual_button_width = button_width;
     if (layout == LV_FLEX_FLOW_ROW && button_width == -1) {
         actual_button_width = (280 - (option_count - 1) * 10) / option_count;
     }
-    
+
     // Create buttons
     for (int i = 0; i < option_count; i++) {
-        lv_color_t color = (i == initial_selection) ? lv_color_hex(THEME_COLOR_PRIMARY) : lv_color_hex(THEME_COLOR_NEUTRAL);
+        lv_color_t color = (i == initial_selection) ? lv_color_hex(data->selected_colors[i]) : lv_color_hex(THEME_COLOR_NEUTRAL);
         data->buttons[i] = create_button(group_container, options[i], color, actual_button_width, button_height, &lv_font_montserrat_24);
         
         // Add event handler
@@ -306,7 +316,7 @@ void radio_button_group_set_selection(lv_obj_t* group, int selected_index) {
     for (int i = 0; i < data->button_count; i++) {
         if (data->buttons[i] && lv_obj_is_valid(data->buttons[i])) {
             if (i == selected_index) {
-                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(THEME_COLOR_PRIMARY), 0);
+                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(data->selected_colors[i]), 0);
             } else {
                 lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(THEME_COLOR_NEUTRAL), 0);
             }

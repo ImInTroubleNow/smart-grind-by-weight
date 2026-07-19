@@ -37,7 +37,8 @@ lv_obj_t* create_radio_button_group(
     int32_t button_width,           // Width per button (-1 for auto)
     int32_t button_height,          // Height per button
     radio_button_callback_t callback, // Called when selection changes
-    void* user_data                 // Passed to callback
+    void* user_data,                // Passed to callback
+    const uint32_t* selected_colors = nullptr // Per-option selected-state color (hex); nullptr = THEME_COLOR_PRIMARY for all
 );
 
 // Radio button group utility functions
