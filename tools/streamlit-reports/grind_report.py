@@ -11,7 +11,8 @@ from circular_buffer_math import calculate_95th_percentile_series
 # --- Configuration ---
 DB_FILE = os.environ.get('GRIND_DB_PATH', '../database/grinder_data.db')
 TOLERANCE_G = 0.03  # Actual grind accuracy tolerance
-PROFILE_MAP = {0: "2 CUPS", 1: "4 CUPS", 2: "6 CUPS", 3: "8 CUPS", 4: "10 CUPS", 5: "CUSTOM"}
+PROFILE_MAP_DRIP = {0: "2 CUPS", 1: "4 CUPS", 2: "6 CUPS", 3: "8 CUPS", 4: "10 CUPS", 5: "CUSTOM"}
+PROFILE_MAP_ESPRESSO = {0: "SINGLE", 1: "DOUBLE", 2: "CUSTOM"}
 MODE_MAP = {0: "WEIGHT", 1: "TIME"}
 TERMINATION_REASON_MAP = {
     0: "COMPLETE",
@@ -359,7 +360,15 @@ sessions_df['termination_reason_name'] = sessions_df['termination_reason'].map(T
 sessions_df['error_grams'] = sessions_df['final_weight'] - sessions_df['target_weight']
 sessions_df.loc[sessions_df['mode_name'] != 'WEIGHT', 'error_grams'] = 0.0
 
-sessions_df['profile_name'] = sessions_df['profile_id'].map(PROFILE_MAP)
+
+# profile_style/schema_version are only meaningful from schema 3 onward;
+# older exports never had an Espresso style, so default them to Drip.
+if 'profile_style' in sessions_df.columns and 'schema_version' in sessions_df.columns:
+    is_espresso = (sessions_df['schema_version'] >= 3) & (sessions_df['profile_style'] == 1)
+else:
+    is_espresso = pd.Series(False, index=sessions_df.index)
+sessions_df['profile_name'] = sessions_df['profile_id'].map(PROFILE_MAP_DRIP)
+sessions_df.loc[is_espresso, 'profile_name'] = sessions_df.loc[is_espresso, 'profile_id'].map(PROFILE_MAP_ESPRESSO)
 
 mode_filter_options = ["All", "Weight", "Time"]
 mode_filter = st.sidebar.selectbox("Grind mode", mode_filter_options, index=0)

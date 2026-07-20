@@ -10,9 +10,9 @@
 //------------------------------------------------------------------------------
 // COFFEE PROFILES
 //------------------------------------------------------------------------------
-#define USER_PROFILE_COUNT 6                                                    // Number of coffee profiles available
+#define USER_PROFILE_COUNT 6                                                    // Number of Drip Coffee profiles available (max profile-slot capacity across both styles)
 #define USER_PROFILE_NAME_MAX_LENGTH 10                                          // Maximum characters in profile name
-#define USER_PROFILE_DEFAULTS_VERSION 2                                         // Bump to force a one-time reset of saved profile weights/times to current defaults
+#define USER_PROFILE_DEFAULTS_VERSION 2                                         // Bump to force a one-time reset of saved Drip profile weights/times to current defaults
 
 // Default target weights for each profile
 #define USER_2CUP_WEIGHT_G 15.6f                                                // 2-cup default weight (250mL @ 1:16 ratio)
@@ -28,6 +28,18 @@
 #define USER_8CUP_TIME_S 34.7f                                                  // 8-cup default grind time (weight_g * 0.555)
 #define USER_10CUP_TIME_S 43.3f                                                 // 10-cup default grind time (weight_g * 0.555)
 #define USER_CUSTOM_PROFILE_TIME_S 12.0f                                        // Custom profile default grind time
+
+// Espresso profile style (alternate to Drip Coffee, selectable via Menu > Grind Settings)
+#define USER_ESPRESSO_PROFILE_COUNT 3                                           // Number of Espresso profiles available
+#define USER_ESPRESSO_PROFILE_DEFAULTS_VERSION 1                                // Bump to force a one-time reset of saved Espresso profile weights/times to current defaults
+
+#define USER_SINGLE_ESPRESSO_WEIGHT_G 9.0f                                      // Single espresso default weight
+#define USER_DOUBLE_ESPRESSO_WEIGHT_G 18.0f                                     // Double espresso default weight
+#define USER_ESPRESSO_CUSTOM_WEIGHT_G 21.5f                                     // Espresso-style custom profile default weight
+
+#define USER_SINGLE_ESPRESSO_TIME_S 5.0f                                        // Single espresso default grind time
+#define USER_DOUBLE_ESPRESSO_TIME_S 10.0f                                       // Double espresso default grind time
+#define USER_ESPRESSO_CUSTOM_TIME_S 12.0f                                       // Espresso-style custom profile default grind time
 
 // Weight limits
 #define USER_MIN_TARGET_WEIGHT_G 5.0f                                           // Minimum allowed target weight

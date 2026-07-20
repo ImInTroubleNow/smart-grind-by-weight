@@ -30,7 +30,7 @@ class Grinder;
 
 #pragma pack(push, 1)
 
-constexpr uint16_t GRIND_LOG_SCHEMA_VERSION = 2;
+constexpr uint16_t GRIND_LOG_SCHEMA_VERSION = 3;
 
 // Time-series session header for flash file
 struct TimeSeriesSessionHeader {
@@ -125,7 +125,8 @@ struct GrindSession {
     uint8_t  max_pulse_attempts;      // Configured max pulse attempts
     uint8_t  pulse_count;             // Pulses executed
     uint8_t  termination_reason;      // See GrindTerminationReason
-    uint8_t  reserved[3];             // Alignment + future expansion
+    uint8_t  profile_style;           // ProfileStyle enum value (meaningful when schema_version >= 3)
+    uint8_t  reserved[2];             // Alignment + future expansion
     char     result_status[16];       // Null-terminated status string
 
     GrindSession() {

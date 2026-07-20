@@ -13,7 +13,8 @@ class GrindDataLoader:
             # Check for environment variable first, then fall back to default
             db_path = os.environ.get('GRIND_DB_PATH', '../database/grinder_data.db')
         self.db_path = db_path
-        self.profile_map = {0: "2 CUPS", 1: "4 CUPS", 2: "6 CUPS", 3: "8 CUPS", 4: "10 CUPS", 5: "CUSTOM"}
+        self.profile_map_drip = {0: "2 CUPS", 1: "4 CUPS", 2: "6 CUPS", 3: "8 CUPS", 4: "10 CUPS", 5: "CUSTOM"}
+        self.profile_map_espresso = {0: "SINGLE", 1: "DOUBLE", 2: "CUSTOM"}
     
     def _get_connection(self):
         """Get database connection"""
@@ -25,7 +26,14 @@ class GrindDataLoader:
         """Load all grind sessions"""
         with self._get_connection() as conn:
             sessions = pd.read_sql_query("SELECT * FROM grind_sessions", conn)
-            sessions['profile_name'] = sessions['profile_id'].map(self.profile_map)
+            # profile_style/schema_version are only meaningful from schema 3 onward;
+            # older exports never had an Espresso style, so default them to Drip.
+            if 'profile_style' in sessions.columns and 'schema_version' in sessions.columns:
+                is_espresso = (sessions['schema_version'] >= 3) & (sessions['profile_style'] == 1)
+            else:
+                is_espresso = pd.Series(False, index=sessions.index)
+            sessions['profile_name'] = sessions['profile_id'].map(self.profile_map_drip)
+            sessions.loc[is_espresso, 'profile_name'] = sessions.loc[is_espresso, 'profile_id'].map(self.profile_map_espresso)
             # Convert timestamp column - handle both session_timestamp and timestamp
             if 'session_timestamp' in sessions.columns:
                 sessions['timestamp'] = pd.to_datetime(sessions['session_timestamp'], unit='s')

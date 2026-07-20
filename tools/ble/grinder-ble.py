@@ -121,7 +121,7 @@ BLE_DEBUG_CMD_DISABLE = 0x02
 BLE_OTA_IDLE = 0x00
 
 # Binary log schema definitions (must match firmware)
-LOG_SCHEMA_VERSION = 2
+LOG_SCHEMA_VERSION = 3
 SESSION_STRUCT_SIZE = 80
 EVENT_STRUCT_SIZE = 44
 MEASUREMENT_STRUCT_SIZE = 24
@@ -688,6 +688,9 @@ class GrinderBLETool:
         max_pulse_attempts = struct.unpack_from('<B', session_bytes, 58)[0]
         pulse_count = struct.unpack_from('<B', session_bytes, 59)[0]
         termination_reason = struct.unpack_from('<B', session_bytes, 60)[0]
+        # Meaningful when schema_version >= 3 (0=Drip, 1=Espresso); older
+        # records always had 0 here since this byte used to be reserved padding.
+        profile_style = struct.unpack_from('<B', session_bytes, 61)[0]
 
         result_bytes = session_bytes[64:80]
 
@@ -704,6 +707,7 @@ class GrinderBLETool:
             'session_id': parsed_session_id,
             'session_timestamp': session_timestamp,
             'profile_id': profile_id,
+            'profile_style': profile_style,
             'grind_mode': grind_mode,
             'target_weight': target_weight,
             'target_time_ms': target_time_ms,
@@ -848,6 +852,7 @@ class GrinderBLETool:
                     session_id INTEGER PRIMARY KEY,
                     session_timestamp INTEGER,
                     profile_id INTEGER,
+                    profile_style INTEGER,
                     grind_mode INTEGER,
                     target_weight REAL,
                     target_time_ms INTEGER,
@@ -894,10 +899,10 @@ class GrinderBLETool:
             # Insert data
             
             # Build placeholders dynamically to match column count
-            _cols_sessions = """session_id, session_timestamp, profile_id, grind_mode, target_weight, target_time_ms, tolerance, final_weight, start_weight, error_grams, time_error_ms, total_time_ms, total_motor_on_time_ms, pulse_count, max_pulse_attempts, termination_reason, latency_to_coast_ratio, flow_rate_threshold, schema_version, result_status, checksum, session_size_bytes"""
+            _cols_sessions = """session_id, session_timestamp, profile_id, profile_style, grind_mode, target_weight, target_time_ms, tolerance, final_weight, start_weight, error_grams, time_error_ms, total_time_ms, total_motor_on_time_ms, pulse_count, max_pulse_attempts, termination_reason, latency_to_coast_ratio, flow_rate_threshold, schema_version, result_status, checksum, session_size_bytes"""
             _params_sessions = [
                     (
-                        s['session_id'], s['session_timestamp'], s['profile_id'], s.get('grind_mode', 0),
+                        s['session_id'], s['session_timestamp'], s['profile_id'], s.get('profile_style', 0), s.get('grind_mode', 0),
                         s['target_weight'], s.get('target_time_ms', 0), s['tolerance'],
                         s['final_weight'], s.get('start_weight', 0.0), s['error_grams'], s.get('time_error_ms', 0),
                         s['total_time_ms'], s['total_motor_on_time_ms'], s['pulse_count'], s.get('max_pulse_attempts', 0),

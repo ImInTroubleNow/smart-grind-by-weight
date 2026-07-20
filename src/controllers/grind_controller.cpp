@@ -29,6 +29,7 @@ void GrindController::init(WeightSensor* lc, Grinder* gr, Preferences* prefs) {
     phase = GrindPhase::IDLE;
     tolerance = GRIND_ACCURACY_TOLERANCE_G;
     current_profile_id = 0;
+    current_profile_style = ProfileStyle::DRIP;
     force_measurement_log = false;
     target_time_ms = 0;
     time_grind_start_ms = 0;

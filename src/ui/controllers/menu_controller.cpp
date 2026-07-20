@@ -48,6 +48,7 @@ void MenuUIController::register_events() {
 
     EventBridgeLVGL::register_handler(ET::GRIND_MODE_SWIPE_TOGGLE, [this](lv_event_t*) { handle_grind_mode_swipe_toggle(); });
     EventBridgeLVGL::register_handler(ET::GRIND_MODE_RADIO_BUTTON, [this](lv_event_t*) { handle_grind_mode_radio_button(); });
+    EventBridgeLVGL::register_handler(ET::PROFILE_STYLE_RADIO_BUTTON, [this](lv_event_t*) { handle_profile_style_radio_button(); });
     EventBridgeLVGL::register_handler(ET::AUTO_START_TOGGLE, [this](lv_event_t*) { handle_auto_start_toggle(); });
     EventBridgeLVGL::register_handler(ET::AUTO_RETURN_TOGGLE, [this](lv_event_t*) { handle_auto_return_toggle(); });
     EventBridgeLVGL::register_handler(ET::GRINDER_PURGE_MODE_RADIO_BUTTON, [this](lv_event_t*) { handle_grinder_purge_mode_radio_button(); });
@@ -368,6 +369,33 @@ void MenuUIController::handle_grind_mode_radio_button() {
             ui_manager_->edit_controller_->update_display();
         }
     }
+}
+
+void MenuUIController::handle_profile_style_radio_button() {
+    if (!ui_manager_ || !ui_manager_->profile_controller) return;
+
+    lv_obj_t* radio_group = ui_manager_->menu_screen.get_profile_style_radio_group();
+    if (!radio_group) return;
+
+    int selected_index = radio_button_group_get_selection(radio_group);
+    if (selected_index < 0) return;
+
+    ProfileStyle new_style = (selected_index == 1) ? ProfileStyle::ESPRESSO : ProfileStyle::DRIP;
+    if (new_style == ui_manager_->profile_controller->get_profile_style()) return;
+
+    ui_manager_->profile_controller->set_profile_style(new_style);
+    ui_manager_->current_tab = ui_manager_->profile_controller->get_current_profile();
+
+    // Ready screen is hidden while the Menu is open (this handler only fires
+    // from a menu radio button), so rebuilding its tabview here is invisible
+    // to the user until they navigate back.
+    ui_manager_->ready_screen.rebuild_for_style(ui_manager_->profile_controller);
+    if (ui_manager_->ready_controller_) {
+        ui_manager_->ready_controller_->register_tabview_events();
+        ui_manager_->ready_controller_->refresh_profiles();
+    }
+
+    LOG_DEBUG_PRINTLN(new_style == ProfileStyle::ESPRESSO ? "Profile style switched to Espresso" : "Profile style switched to Drip Coffee");
 }
 
 void MenuUIController::handle_auto_start_toggle() {

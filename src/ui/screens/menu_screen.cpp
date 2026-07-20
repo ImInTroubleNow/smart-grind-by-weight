@@ -329,6 +329,12 @@ void MenuScreen::create_display_page(lv_obj_t* parent) {
 }
 
 
+// Callback for profile style radio button selection
+static void profile_style_callback(int selected_index, void* user_data) {
+    // Trigger the event system instead of handling directly
+    EventBridgeLVGL::handle_event(EventBridgeLVGL::EventType::PROFILE_STYLE_RADIO_BUTTON, nullptr);
+}
+
 // Callback for grind mode radio button selection
 static void grind_mode_callback(int selected_index, void* user_data) {
     // Trigger the event system instead of handling directly
@@ -349,6 +355,23 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
     // Enable vertical scrolling on the grind mode page
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
+
+    // Profile Style separator/label
+    create_separator(parent, "Profile Style");
+
+    const char* profile_styles[] = {"Drip Coffee", "Espresso"};
+    profile_style_radio_group = create_radio_button_group(
+        parent,
+        profile_styles,
+        2,
+        LV_FLEX_FLOW_COLUMN,
+        0,  // Drip Coffee initially selected; re-synced in update_grind_mode_toggles()
+        240, 70,  // Width, Height
+        profile_style_callback,
+        this
+    );
+
+    create_description_label(parent, "Switch between 6 drip profiles and 3 espresso profiles. Each style keeps its own saved weights/times.");
 
     // Mode Selection separator/label
     create_separator(parent, "Mode Selection");
@@ -535,6 +558,7 @@ void MenuScreen::create_stats_page(lv_obj_t* parent) {
     create_separator(parent, "Lifetime Statistics");
     create_data_label(parent, "Total Grinds:", &stat_total_grinds_label, true);
     create_data_label(parent, "Shots (2/4/6/8/10/C):", &stat_shots_label, true);
+    create_data_label(parent, "Espresso (S/D/C):", &stat_espresso_shots_label, true);
     create_data_label(parent, "Motor Runtime:", &stat_motor_runtime_label, true);
     create_data_label(parent, "Device Uptime:", &stat_device_uptime_label, true);
     create_data_label(parent, "Total Weight:", &stat_total_weight_label, true);
@@ -794,6 +818,14 @@ void MenuScreen::refresh_statistics(bool show_overlay) {
                  statistics_manager.get_profile_shots(4),
                  statistics_manager.get_profile_shots(5));
         lv_label_set_text(stat_shots_label, shot_text);
+
+        // Espresso shot breakdown (Single/Double/Custom) - tracked independently of Drip
+        char espresso_shot_text[32];
+        snprintf(espresso_shot_text, sizeof(espresso_shot_text), "%lu/%lu/%lu",
+                 statistics_manager.get_profile_shots(0, ProfileStyle::ESPRESSO),
+                 statistics_manager.get_profile_shots(1, ProfileStyle::ESPRESSO),
+                 statistics_manager.get_profile_shots(2, ProfileStyle::ESPRESSO));
+        lv_label_set_text(stat_espresso_shots_label, espresso_shot_text);
 
         // Motor runtime (convert seconds to hours:minutes)
         uint64_t runtime_ms = statistics_manager.get_motor_runtime_ms();
@@ -1140,22 +1172,28 @@ void MenuScreen::update_grind_mode_toggles() {
     bool swipe_enabled = swipe_prefs.getBool("enabled", false);
     swipe_prefs.end();
 
-    // Read Time Only lock + purge settings from main grinder preferences using hardware manager
+    // Read Time Only lock + purge settings + profile style from main grinder preferences using hardware manager
     bool time_only_mode = false;
     int grinder_purge_mode_index = GRIND_PURGE_MODE_DEFAULT;  // Default to Purge
     float grinder_purge_amount_g = GRIND_PURGE_AMOUNT_DEFAULT_G;  // Default to 1.0g
+    int profile_style_index = 0;  // Default to Drip Coffee
     if (hardware_manager) {
         Preferences* main_prefs = hardware_manager->get_preferences();
         if (main_prefs) {
             time_only_mode = main_prefs->getBool("time_only_mode", false);
             grinder_purge_mode_index = main_prefs->getInt(GrindController::PREF_KEY_GRINDER_MODE, GRIND_PURGE_MODE_DEFAULT);
             grinder_purge_amount_g = main_prefs->getFloat(GrindController::PREF_KEY_GRINDER_AMOUNT_G, GRIND_PURGE_AMOUNT_DEFAULT_G);
+            profile_style_index = main_prefs->getInt("profile_style", 0);
         }
     }
     int mode_index = time_only_mode ? 1 : 0;
 
     if (grind_mode_radio_group) {
         radio_button_group_set_selection(grind_mode_radio_group, mode_index);
+    }
+
+    if (profile_style_radio_group) {
+        radio_button_group_set_selection(profile_style_radio_group, profile_style_index);
     }
 
     set_swipe_row_visible(!time_only_mode);

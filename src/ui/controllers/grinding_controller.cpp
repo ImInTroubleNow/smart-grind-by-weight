@@ -202,7 +202,8 @@ void GrindingUIController::handle_grind_button() {
         }
     } else if (ui_manager_->state_machine->is_state(UIState::READY)) {
         if (ui_manager_->grind_controller && ui_manager_->profile_controller) {
-            ui_manager_->grind_controller->set_grind_profile_id(ui_manager_->profile_controller->get_current_profile());
+            ui_manager_->grind_controller->set_grind_profile_id(ui_manager_->profile_controller->get_current_profile(),
+                                                                 ui_manager_->profile_controller->get_profile_style());
         }
 
         LOG_BLE("[%lums GRIND_START] About to call start_grind()\n", millis());

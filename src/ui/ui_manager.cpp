@@ -74,7 +74,7 @@ void UIManager::create_ui() {
     lv_obj_add_style(lv_scr_act(), &style_screen, 0);
 
     // Create all screens
-    ready_screen.create();
+    ready_screen.create(profile_controller);
     edit_screen.create();
     grinding_screen.init(hardware_manager->get_preferences());
     grinding_screen.create();
@@ -389,7 +389,8 @@ void UIManager::update_auto_actions() {
 
     const uint32_t now = millis();
     const bool grinder_active = (grind_controller && grind_controller->is_active());
-    const bool on_ready_tab = state_machine->is_state(UIState::READY) && current_tab < USER_PROFILE_COUNT;
+    const bool on_ready_tab = state_machine->is_state(UIState::READY) &&
+                              profile_controller && current_tab < profile_controller->get_profile_count();
 
     if (auto_actions_.auto_start_enabled && on_ready_tab && !grinder_active && grinding_controller_) {
         auto* filter = sensor->get_raw_filter();

@@ -23,11 +23,12 @@ void ReadyUIController::refresh_profiles() {
         return;
     }
 
+    int count = ui_manager_->profile_controller->get_profile_count();
     float values[USER_PROFILE_COUNT];
-    for (int i = 0; i < USER_PROFILE_COUNT; ++i) {
+    for (int i = 0; i < count; ++i) {
         values[i] = get_profile_target(*ui_manager_->profile_controller, ui_manager_->current_mode, i);
     }
-    ui_manager_->ready_screen.update_profile_values(values, ui_manager_->current_mode);
+    ui_manager_->ready_screen.update_profile_values(values, count, ui_manager_->current_mode);
 }
 
 void ReadyUIController::handle_tab_change(int tab) {
@@ -35,11 +36,13 @@ void ReadyUIController::handle_tab_change(int tab) {
         return;
     }
 
+    int count = ui_manager_->profile_controller ? ui_manager_->profile_controller->get_profile_count() : 0;
+
     ui_manager_->current_tab = tab;
-    if (tab < USER_PROFILE_COUNT) {
+    if (tab < count) {
         ui_manager_->ready_screen.update_active_dot(tab);
     }
-    if (ui_manager_->profile_controller && tab < USER_PROFILE_COUNT) {
+    if (ui_manager_->profile_controller && tab < count) {
         ui_manager_->profile_controller->set_current_profile(tab);
         refresh_profiles();
     }
@@ -50,11 +53,12 @@ void ReadyUIController::handle_tab_change(int tab) {
 }
 
 void ReadyUIController::handle_profile_long_press() {
-    if (!ui_manager_ || !ui_manager_->state_machine) {
+    if (!ui_manager_ || !ui_manager_->state_machine || !ui_manager_->profile_controller) {
         return;
     }
 
-    if (!ui_manager_->state_machine->is_state(UIState::READY) || ui_manager_->current_tab >= USER_PROFILE_COUNT) {
+    if (!ui_manager_->state_machine->is_state(UIState::READY) ||
+        ui_manager_->current_tab >= ui_manager_->profile_controller->get_profile_count()) {
         return;
     }
 
@@ -68,7 +72,8 @@ void ReadyUIController::handle_profile_long_press() {
 }
 
 void ReadyUIController::toggle_mode() {
-    if (!ui_manager_ || ui_manager_->current_tab >= USER_PROFILE_COUNT) {
+    if (!ui_manager_ || !ui_manager_->profile_controller ||
+        ui_manager_->current_tab >= ui_manager_->profile_controller->get_profile_count()) {
         return;
     }
 
@@ -116,17 +121,18 @@ void ReadyUIController::toggle_mode() {
 }
 
 void ReadyUIController::handle_tab_wrap() {
-    if (!ui_manager_ || !ui_manager_->state_machine) {
+    if (!ui_manager_ || !ui_manager_->state_machine || !ui_manager_->profile_controller) {
         return;
     }
 
-    if (!ui_manager_->state_machine->is_state(UIState::READY) || ui_manager_->current_tab >= USER_PROFILE_COUNT) {
+    int count = ui_manager_->profile_controller->get_profile_count();
+    if (!ui_manager_->state_machine->is_state(UIState::READY) || ui_manager_->current_tab >= count) {
         return;
     }
 
     // Only the two boundary tabs can wrap.
     int tab = ui_manager_->current_tab;
-    if (tab != 0 && tab != USER_PROFILE_COUNT - 1) {
+    if (tab != 0 && tab != count - 1) {
         return;
     }
 
@@ -141,10 +147,10 @@ void ReadyUIController::handle_tab_wrap() {
     int32_t threshold = page_w / 16; // ~6% of a page width of elastic pull
 
     int target_tab = -1;
-    if (tab == USER_PROFILE_COUNT - 1 && overscroll > threshold) {
+    if (tab == count - 1 && overscroll > threshold) {
         target_tab = 0;
     } else if (tab == 0 && overscroll < -threshold) {
-        target_tab = USER_PROFILE_COUNT - 1;
+        target_tab = count - 1;
     }
 
     if (target_tab >= 0) {
@@ -186,18 +192,43 @@ void ReadyUIController::handle_tab_wrap() {
     }
 }
 
+void ReadyUIController::register_tabview_events() {
+    if (!ui_manager_) {
+        return;
+    }
+
+    lv_obj_t* tabview = ui_manager_->ready_screen.get_tabview();
+    if (!tabview) {
+        return;
+    }
+
+    lv_obj_add_event_cb(tabview, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
+                        reinterpret_cast<void*>(static_cast<intptr_t>(EventBridgeLVGL::EventType::TAB_CHANGE)));
+
+    auto gesture_handler = [](lv_event_t* e) {
+        if (lv_event_get_code(e) != LV_EVENT_GESTURE) {
+            return;
+        }
+        lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+        if (dir != LV_DIR_TOP && dir != LV_DIR_BOTTOM) {
+            return;
+        }
+        UIManager* ui = static_cast<UIManager*>(lv_event_get_user_data(e));
+        if (ui && ui->state_machine->is_state(UIState::READY) && ui->ready_controller_) {
+            ui->ready_controller_->toggle_mode();
+        }
+    };
+    lv_obj_add_event_cb(tabview, gesture_handler, LV_EVENT_GESTURE, ui_manager_);
+}
+
 void ReadyUIController::register_events() {
     if (!ui_manager_) {
         return;
     }
 
     lv_obj_t* ready_screen_obj = ui_manager_->ready_screen.get_screen();
-    lv_obj_t* tabview = ui_manager_->ready_screen.get_tabview();
 
-    if (tabview) {
-        lv_obj_add_event_cb(tabview, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
-                            reinterpret_cast<void*>(static_cast<intptr_t>(EventBridgeLVGL::EventType::TAB_CHANGE)));
-    }
+    register_tabview_events();
 
     // Persistent menu icon - jumps straight to Menu from any profile tab
     if (lv_obj_t* menu_icon_button = ui_manager_->ready_screen.get_menu_icon_button()) {
@@ -226,9 +257,6 @@ void ReadyUIController::register_events() {
         }
     };
 
-    if (tabview) {
-        lv_obj_add_event_cb(tabview, gesture_handler, LV_EVENT_GESTURE, ui_manager_);
-    }
     if (ready_screen_obj) {
         lv_obj_add_event_cb(ready_screen_obj, gesture_handler, LV_EVENT_GESTURE, ui_manager_);
     }

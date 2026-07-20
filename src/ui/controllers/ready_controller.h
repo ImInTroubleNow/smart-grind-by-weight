@@ -11,6 +11,7 @@ public:
     explicit ReadyUIController(UIManager* manager);
 
     void register_events();
+    void register_tabview_events();
     void update();
     void refresh_profiles();
     void handle_tab_change(int tab);

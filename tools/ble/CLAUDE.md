@@ -92,7 +92,8 @@ struct GrindSession {
     uint8_t max_pulse_attempts;       // 62
     uint8_t pulse_count;              // 63
     uint8_t termination_reason;       // 64 (enum GrindTerminationReason)
-    uint8_t reserved[3];              // 65-67
+    uint8_t profile_style;            // 65 (enum ProfileStyle: 0=Drip, 1=Espresso; meaningful when schema_version >= 3)
+    uint8_t reserved[2];              // 66-67
 
     char    result_status[16];        // 68-83 (null-terminated)
 };

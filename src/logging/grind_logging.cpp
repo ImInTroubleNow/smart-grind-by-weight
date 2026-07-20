@@ -94,6 +94,7 @@ void GrindLogger::start_grind_session(const GrindSessionDescriptor& descriptor, 
 
     current_session->session_timestamp = millis() / 1000;
     current_session->profile_id = descriptor.profile_id;
+    current_session->profile_style = static_cast<uint8_t>(descriptor.profile_style);
     current_session->target_weight = descriptor.target_weight;
     current_session->tolerance = descriptor.tolerance;
     current_session->grind_mode = static_cast<uint8_t>(descriptor.mode);
@@ -175,6 +176,7 @@ void GrindLogger::end_grind_session(const char* final_result, float final_weight
         bool is_weight_mode = (mode == GrindMode::WEIGHT);
         statistics_manager.update_grind_session(
             current_session->profile_id,
+            static_cast<ProfileStyle>(current_session->profile_style),
             final_weight,
             current_session->error_grams,
             pulse_count,
@@ -437,7 +439,7 @@ void GrindLogger::send_current_session_via_serial() {
     }
     
     LOG_BLE("\n=== Current Grind Session %lu ===\n", current_session->session_id);
-    LOG_BLE("Target: %.1fg, Profile: %d\n", current_session->target_weight, current_session->profile_id);
+    LOG_BLE("Target: %.1fg, Profile: %d, Style: %d\n", current_session->target_weight, current_session->profile_id, current_session->profile_style);
     LOG_BLE("Events: %u/%d, Measurements: %u/%d\n", event_count, (int)EVENT_TEMP_BUFFER_SIZE, measurement_count, (int)MEASUREMENT_TEMP_BUFFER_SIZE);
     LOG_BLE("=====================================\n");
 }
@@ -1076,6 +1078,7 @@ void GrindLogger::print_comprehensive_debug() {
         LOG_BLE("  session_id: %lu\n", session.session_id);
         LOG_BLE("  session_timestamp: %lu\n", session.session_timestamp);
         LOG_BLE("  profile_id: %u\n", session.profile_id);
+        LOG_BLE("  profile_style: %u\n", session.profile_style);
         LOG_BLE("  target_weight: %.3f\n", session.target_weight);
         LOG_BLE("  tolerance: %.3f\n", session.tolerance);
         LOG_BLE("  final_weight: %.3f\n", session.final_weight);

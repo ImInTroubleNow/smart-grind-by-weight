@@ -129,6 +129,7 @@ private:
 
     // Logging support
     uint8_t current_profile_id;
+    ProfileStyle current_profile_style;
     GrindEvent event_in_progress; // Used to build data for the current phase event
     
     // State tracking for measurement calculations (eliminates calculations in logger)
@@ -237,7 +238,12 @@ public:
     const GrindSessionDescriptor& get_session_descriptor() const { return session_descriptor; }
     
     // Grind logging functions
-    void set_grind_profile_id(uint8_t profile_id) { current_profile_id = profile_id; session_descriptor.profile_id = profile_id; }
+    void set_grind_profile_id(uint8_t profile_id, ProfileStyle profile_style) {
+        current_profile_id = profile_id;
+        current_profile_style = profile_style;
+        session_descriptor.profile_id = profile_id;
+        session_descriptor.profile_style = profile_style;
+    }
     void send_measurements_data();           // Send structured measurement data via serial
     
     // Getter methods for logger (to eliminate calculations in logger)

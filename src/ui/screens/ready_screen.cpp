@@ -2,9 +2,17 @@
 #include <Arduino.h>
 #include "../../config/constants.h"
 #include "../../controllers/grind_mode_traits.h"
+#include "../../controllers/profile_controller.h"
+#include "../../controllers/profile_style.h"
 #include "../ui_helpers.h"
 
-void ReadyScreen::create() {
+// Water volume at a 1:16 coffee:water ratio for Drip Coffee tabs; CUSTOM (and
+// every Espresso tab) has no fixed volume.
+static const char* DRIP_VOLUME_TEXT[USER_PROFILE_COUNT] = {
+    "250mL", "500mL", "750mL", "1L", "1.25L", ""
+};
+
+void ReadyScreen::create(ProfileController* profile_controller) {
     screen = lv_obj_create(lv_scr_act());
     lv_obj_set_size(screen, LV_PCT(100), LV_PCT(80));
     lv_obj_align(screen, LV_ALIGN_TOP_MID, 0, 0);
@@ -44,27 +52,6 @@ void ReadyScreen::create() {
     lv_obj_set_style_text_font(menu_icon, &lv_font_montserrat_24, 0);
     lv_obj_center(menu_icon);
 
-    // Default weights and names, driven by USER_PROFILE_COUNT
-    float default_weights[USER_PROFILE_COUNT] = {
-        USER_2CUP_WEIGHT_G, USER_4CUP_WEIGHT_G, USER_6CUP_WEIGHT_G,
-        USER_8CUP_WEIGHT_G, USER_10CUP_WEIGHT_G, USER_CUSTOM_PROFILE_WEIGHT_G
-    };
-    const char* names[USER_PROFILE_COUNT] = {
-        "2 CUPS", "4 CUPS", "6 CUPS", "8 CUPS", "10 CUPS", "CUSTOM"
-    };
-    // Water volume at a 1:16 coffee:water ratio; CUSTOM has no fixed volume.
-    const char* volumes[USER_PROFILE_COUNT] = {
-        "250mL", "500mL", "750mL", "1L", "1.25L", ""
-    };
-
-    // Add profile tabs
-    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
-        profile_tabs[i] = lv_tabview_add_tab(tabview, names[i]);
-        create_profile_page(profile_tabs[i], i, names[i], default_weights[i], volumes[i]);
-    }
-
-    update_profile_values(default_weights, GrindMode::WEIGHT);
-
     // Page-dot indicator - lives directly on the root screen (not inside
     // 'screen', which only covers the top 80%) so it can sit in the strip
     // below the grind button. Visibility is managed manually in show()/hide()
@@ -83,6 +70,38 @@ void ReadyScreen::create() {
     lv_obj_add_flag(page_dot_row, LV_OBJ_FLAG_HIDDEN);
 
     for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+        profile_tabs[i] = nullptr;
+        weight_labels[i] = nullptr;
+        page_dots[i] = nullptr;
+    }
+
+    populate_tabs_and_dots(profile_controller);
+
+    visible = false;
+}
+
+void ReadyScreen::populate_tabs_and_dots(ProfileController* profile_controller) {
+    int count = profile_controller->get_profile_count();
+    ProfileStyle style = profile_controller->get_profile_style();
+
+    float weights[USER_PROFILE_COUNT];
+    for (int i = 0; i < count; i++) {
+        weights[i] = profile_controller->get_profile_weight(i);
+    }
+
+    // Add profile tabs
+    for (int i = 0; i < count; i++) {
+        const char* name = profile_controller->get_profile_name(i);
+        const char* volume_text = (style == ProfileStyle::DRIP) ? DRIP_VOLUME_TEXT[i] : "";
+        profile_tabs[i] = lv_tabview_add_tab(tabview, name);
+        create_profile_page(profile_tabs[i], i, name, weights[i], volume_text);
+    }
+
+    active_profile_count = count;
+
+    // Rebuild the page-dot row to match the active profile count
+    lv_obj_clean(page_dot_row);
+    for (int i = 0; i < count; i++) {
         page_dots[i] = lv_obj_create(page_dot_row);
         lv_obj_set_size(page_dots[i], 6, 6);
         lv_obj_set_style_radius(page_dots[i], LV_RADIUS_CIRCLE, 0);
@@ -92,13 +111,48 @@ void ReadyScreen::create() {
         lv_obj_clear_flag(page_dots[i], LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_clear_flag(page_dots[i], LV_OBJ_FLAG_CLICKABLE);
     }
-    update_active_dot(0);
 
-    visible = false;
+    update_active_dot(profile_controller->get_current_profile());
+    update_profile_values(weights, count, profile_controller->get_grind_mode());
+}
+
+void ReadyScreen::rebuild_for_style(ProfileController* profile_controller) {
+    // LVGL's tabview has no tab-removal API, so switching profile counts
+    // requires tearing down and recreating the whole tabview object.
+    lv_obj_del(tabview);
+
+    // Every pointer previously tracked in these capacity-sized arrays is now
+    // dangling (lv_obj_del invalidates all of the tabview's children,
+    // including any beyond the new, possibly-smaller count) - null them all
+    // out before rebuilding so stale pointers can't be mistaken for live ones.
+    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+        profile_tabs[i] = nullptr;
+        weight_labels[i] = nullptr;
+        page_dots[i] = nullptr;
+    }
+
+    tabview = lv_tabview_create(screen);
+    lv_obj_set_size(tabview, LV_PCT(100), LV_PCT(100));
+    lv_obj_align(tabview, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_add_flag(tabview, LV_OBJ_FLAG_SCROLL_CHAIN_VER);
+    lv_obj_add_flag(tabview, LV_OBJ_FLAG_GESTURE_BUBBLE);
+
+    lv_obj_t* tab_btns = lv_tabview_get_tab_btns(tabview);
+    lv_obj_add_flag(tab_btns, LV_OBJ_FLAG_HIDDEN);
+
+    lv_obj_set_style_bg_opa(tabview, LV_OPA_TRANSP, 0);
+
+    populate_tabs_and_dots(profile_controller);
+
+    // The fresh tabview is appended as 'screen's last child, in front of the
+    // menu icon in z-order - restore the icon to the foreground.
+    lv_obj_move_foreground(menu_icon_button);
+
+    lv_tabview_set_act(tabview, profile_controller->get_current_profile(), LV_ANIM_OFF);
 }
 
 void ReadyScreen::update_active_dot(int tab) {
-    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+    for (int i = 0; i < active_profile_count; i++) {
         if (!page_dots[i]) continue;
         bool active = (i == tab);
         lv_obj_set_style_bg_color(page_dots[i],
@@ -119,7 +173,7 @@ void ReadyScreen::create_profile_page(lv_obj_t* parent, int profile_index, const
     lv_obj_add_flag(name_label, LV_OBJ_FLAG_CLICKABLE);
 
     // Volume subtitle - smaller than the name, same color, placed between
-    // the name and the big weight value. Skipped for CUSTOM (no fixed volume).
+    // the name and the big weight value. Skipped when there's no fixed volume.
     if (volume_text && volume_text[0] != '\0') {
         lv_obj_t* volume_label = lv_label_create(label_container);
         lv_label_set_text(volume_label, volume_text);
@@ -164,8 +218,8 @@ void ReadyScreen::hide() {
     visible = false;
 }
 
-void ReadyScreen::update_profile_values(const float values[USER_PROFILE_COUNT], GrindMode mode) {
-    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+void ReadyScreen::update_profile_values(const float values[], int count, GrindMode mode) {
+    for (int i = 0; i < count; i++) {
         if (weight_labels[i]) {
             char text[24];
             format_ready_value(text, sizeof(text), mode, values[i]);
@@ -175,14 +229,14 @@ void ReadyScreen::update_profile_values(const float values[USER_PROFILE_COUNT], 
 }
 
 void ReadyScreen::set_active_tab(int tab) {
-    if (tab >= 0 && tab < USER_PROFILE_COUNT) {
+    if (tab >= 0 && tab < active_profile_count) {
         lv_tabview_set_act(tabview, tab, LV_ANIM_OFF);
         update_active_dot(tab);
     }
 }
 
 void ReadyScreen::set_profile_long_press_handler(lv_event_cb_t handler) {
-    for (int i = 0; i < USER_PROFILE_COUNT; i++) {
+    for (int i = 0; i < active_profile_count; i++) {
         if (weight_labels[i]) {
             lv_obj_add_event_cb(weight_labels[i], handler, LV_EVENT_LONG_PRESSED, NULL);
         }

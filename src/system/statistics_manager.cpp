@@ -34,6 +34,28 @@ struct StatisticsSnapshotV1 {
     uint32_t reserved1;
 };
 
+// Pre-Espresso-style layout (single profile_shots[] array, no espresso_profile_shots[])
+struct StatisticsSnapshotV3 {
+    uint32_t version;
+    uint32_t total_grinds;
+    uint32_t profile_shots[USER_PROFILE_COUNT];
+    uint32_t motor_runtime_sec;
+    uint32_t motor_runtime_ms_remainder;
+    uint32_t device_uptime_hrs;
+    uint32_t device_uptime_min_remainder;
+    float total_weight_kg;
+    uint32_t weight_mode_grinds;
+    uint32_t time_mode_grinds;
+    uint32_t time_pulses;
+    uint32_t total_pulses;
+    uint32_t accuracy_sample_count;
+    float accuracy_sum;
+    uint32_t pulse_sample_count;
+    float pulse_sum;
+    uint32_t reserved0;
+    uint32_t reserved1;
+};
+
 // Pre-cup-profile layout (3 named shot categories instead of a per-profile array)
 struct StatisticsSnapshotV2 {
     uint32_t version;
@@ -98,16 +120,23 @@ void StatisticsManager::init(Preferences* prefs) {
     initialized_ = true;
 }
 
-void StatisticsManager::update_grind_session(uint8_t profile_id, float final_weight, float error_grams, uint8_t pulse_count,
-                                             bool is_weight_mode, uint32_t motor_time_ms) {
+void StatisticsManager::update_grind_session(uint8_t profile_id, ProfileStyle profile_style, float final_weight,
+                                             float error_grams, uint8_t pulse_count, bool is_weight_mode,
+                                             uint32_t motor_time_ms) {
     if (!initialized_) return;
 
     StatsLockGuard lock(g_stats_mutex);
 
     snapshot_.total_grinds++;
 
-    if (profile_id < USER_PROFILE_COUNT) {
-        snapshot_.profile_shots[profile_id]++;
+    if (profile_style == ProfileStyle::ESPRESSO) {
+        if (profile_id < USER_ESPRESSO_PROFILE_COUNT) {
+            snapshot_.espresso_profile_shots[profile_id]++;
+        }
+    } else {
+        if (profile_id < USER_PROFILE_COUNT) {
+            snapshot_.profile_shots[profile_id]++;
+        }
     }
 
     if (is_weight_mode) {
@@ -185,10 +214,14 @@ uint32_t StatisticsManager::get_total_grinds() const {
     return snapshot_.total_grinds;
 }
 
-uint32_t StatisticsManager::get_profile_shots(int profile_index) const {
+uint32_t StatisticsManager::get_profile_shots(int profile_index, ProfileStyle profile_style) const {
     if (!initialized_) return 0;
-    if (profile_index < 0 || profile_index >= USER_PROFILE_COUNT) return 0;
     StatsLockGuard lock(g_stats_mutex);
+    if (profile_style == ProfileStyle::ESPRESSO) {
+        if (profile_index < 0 || profile_index >= USER_ESPRESSO_PROFILE_COUNT) return 0;
+        return snapshot_.espresso_profile_shots[profile_index];
+    }
+    if (profile_index < 0 || profile_index >= USER_PROFILE_COUNT) return 0;
     return snapshot_.profile_shots[profile_index];
 }
 
@@ -287,6 +320,33 @@ void StatisticsManager::load_from_storage() {
     size_t stored_size = stats_prefs.getBytesLength("snapshot");
     if (stored_size == sizeof(StatisticsSnapshot)) {
         stats_prefs.getBytes("snapshot", &snapshot_, sizeof(StatisticsSnapshot));
+    } else if (stored_size == sizeof(StatisticsSnapshotV3)) {
+        // Migrating from the pre-Espresso-style layout - every stat carries over
+        // 1:1 (profile_shots[] included), only espresso_profile_shots[] is new
+        // and starts zeroed.
+        StatisticsSnapshotV3 legacy_snapshot = {};
+        stats_prefs.getBytes("snapshot", &legacy_snapshot, sizeof(StatisticsSnapshotV3));
+
+        snapshot_.version = StatisticsSnapshot::kVersion;
+        snapshot_.total_grinds = legacy_snapshot.total_grinds;
+        std::memcpy(snapshot_.profile_shots, legacy_snapshot.profile_shots, sizeof(legacy_snapshot.profile_shots));
+        // espresso_profile_shots[] intentionally left zeroed - this style didn't exist yet
+        snapshot_.motor_runtime_sec = legacy_snapshot.motor_runtime_sec;
+        snapshot_.motor_runtime_ms_remainder = legacy_snapshot.motor_runtime_ms_remainder;
+        snapshot_.device_uptime_hrs = legacy_snapshot.device_uptime_hrs;
+        snapshot_.device_uptime_min_remainder = legacy_snapshot.device_uptime_min_remainder;
+        snapshot_.total_weight_kg = legacy_snapshot.total_weight_kg;
+        snapshot_.weight_mode_grinds = legacy_snapshot.weight_mode_grinds;
+        snapshot_.time_mode_grinds = legacy_snapshot.time_mode_grinds;
+        snapshot_.time_pulses = legacy_snapshot.time_pulses;
+        snapshot_.total_pulses = legacy_snapshot.total_pulses;
+        snapshot_.accuracy_sample_count = legacy_snapshot.accuracy_sample_count;
+        snapshot_.accuracy_sum = legacy_snapshot.accuracy_sum;
+        snapshot_.pulse_sample_count = legacy_snapshot.pulse_sample_count;
+        snapshot_.pulse_sum = legacy_snapshot.pulse_sum;
+
+        dirty_ = true;
+        stats_prefs.putBytes("snapshot", &snapshot_, sizeof(StatisticsSnapshot));
     } else if (stored_size == sizeof(StatisticsSnapshotV2)) {
         // Migrating from the pre-cup-profile layout (single/double/custom shot counts).
         // There's no clean mapping from 3 old categories to USER_PROFILE_COUNT new ones,

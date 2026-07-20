@@ -1212,6 +1212,27 @@ void BluetoothManager::generate_diagnostic_report() {
     );
     send_chunk(buf);
 
+    // Section 4b: Espresso Profiles
+    snprintf(buf, sizeof(buf),
+        "[COMPILE-TIME PARAMETERS - ESPRESSO PROFILES]\n"
+        "  USER_ESPRESSO_PROFILE_COUNT: %d\n"
+        "  USER_SINGLE_ESPRESSO_WEIGHT_G: %.1f\n"
+        "  USER_DOUBLE_ESPRESSO_WEIGHT_G: %.1f\n"
+        "  USER_ESPRESSO_CUSTOM_WEIGHT_G: %.1f\n"
+        "  USER_SINGLE_ESPRESSO_TIME_S: %.1f\n"
+        "  USER_DOUBLE_ESPRESSO_TIME_S: %.1f\n"
+        "  USER_ESPRESSO_CUSTOM_TIME_S: %.1f\n"
+        "\n",
+        USER_ESPRESSO_PROFILE_COUNT,
+        USER_SINGLE_ESPRESSO_WEIGHT_G,
+        USER_DOUBLE_ESPRESSO_WEIGHT_G,
+        USER_ESPRESSO_CUSTOM_WEIGHT_G,
+        USER_SINGLE_ESPRESSO_TIME_S,
+        USER_DOUBLE_ESPRESSO_TIME_S,
+        USER_ESPRESSO_CUSTOM_TIME_S
+    );
+    send_chunk(buf);
+
     // Section 5: User.h Compile Constants (Part 1)
     snprintf(buf, sizeof(buf),
         "[COMPILE-TIME PARAMETERS - USER.H PART 1]\n"
@@ -1371,6 +1392,7 @@ void BluetoothManager::generate_diagnostic_report() {
         "[STATISTICS]\n"
         "  Total Grinds: %lu\n"
         "  Shots: %lu 2Cup / %lu 4Cup / %lu 6Cup / %lu 8Cup / %lu 10Cup / %lu Custom\n"
+        "  Espresso Shots: %lu Single / %lu Double / %lu Custom\n"
         "  Motor Runtime: %luh %lum\n"
         "  Device Uptime: %luh %lum\n"
         "\n",
@@ -1381,6 +1403,9 @@ void BluetoothManager::generate_diagnostic_report() {
         statistics_manager.get_profile_shots(3),
         statistics_manager.get_profile_shots(4),
         statistics_manager.get_profile_shots(5),
+        statistics_manager.get_profile_shots(0, ProfileStyle::ESPRESSO),
+        statistics_manager.get_profile_shots(1, ProfileStyle::ESPRESSO),
+        statistics_manager.get_profile_shots(2, ProfileStyle::ESPRESSO),
         motor_hrs, motor_min,
         device_uptime_hrs, device_uptime_min
     );
@@ -1606,12 +1631,12 @@ void BluetoothManager::generate_diagnostic_report() {
 
                             snprintf(buf, sizeof(buf),
                                 "\n--- Session #%lu ---\n"
-                                "  Mode: %s | Profile: %u | Status: %.16s\n"
+                                "  Mode: %s | Profile: %u | Style: %u | Status: %.16s\n"
                                 "  Target: %.1fg | Final: %.1fg | Error: %+.2fg\n"
                                 "  Total Time: %.1fs | Motor Time: %.1fs | Pulses: %u\n"
                                 "  Termination: %s\n",
                                 session.session_id,
-                                mode_name, session.profile_id, session.result_status,
+                                mode_name, session.profile_id, session.profile_style, session.result_status,
                                 session.target_weight, session.final_weight, session.error_grams,
                                 session.total_time_ms / 1000.0f, session.total_motor_on_time_ms / 1000.0f, session.pulse_count,
                                 term_name
