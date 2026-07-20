@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <LittleFS.h>
+#include <Preferences.h>
 #include <esp_system.h>
 #include <esp_heap_caps.h>
 #include "hardware/hardware_manager.h"
@@ -22,6 +23,53 @@ GrindController grind_controller;
 UIManager ui_manager;
 BluetoothManager g_bluetooth_manager;
 BluetoothManager& bluetooth_manager = g_bluetooth_manager;
+
+// A handful of preference keys are read (with a hardcoded fallback) from
+// several places before the user ever explicitly sets them - e.g. the purge
+// amount/freshness sliders, or the Bluetooth/Logging/Swipe toggles. Until a
+// key/namespace is first written, ESP-IDF's NVS layer logs a NOT_FOUND error
+// on every single read that falls back to the default. Seeding these once
+// at boot avoids that noise for the rest of the device's life without
+// changing any actual behavior (the values already used were these same
+// defaults).
+static void seed_default_preferences() {
+    Preferences* grinder_prefs = hardware_manager.get_preferences();
+    if (grinder_prefs) {
+        if (!grinder_prefs->isKey(GrindController::PREF_KEY_GRINDER_AMOUNT_G)) {
+            grinder_prefs->putFloat(GrindController::PREF_KEY_GRINDER_AMOUNT_G, GRIND_PURGE_AMOUNT_DEFAULT_G);
+        }
+        if (!grinder_prefs->isKey(GrindController::PREF_KEY_GRIND_FRESHNESS_HOURS)) {
+            grinder_prefs->putFloat(GrindController::PREF_KEY_GRIND_FRESHNESS_HOURS, GRIND_FRESHNESS_DEFAULT_HOURS);
+        }
+
+        // One-time cleanup of throwaway keys written during diagnosis of the
+        // grind_amount_g KEY_TOO_LONG bug - safe to remove once this ships.
+        if (grinder_prefs->isKey("seed_probe")) grinder_prefs->remove("seed_probe");
+        if (grinder_prefs->isKey("seed_probe2")) grinder_prefs->remove("seed_probe2");
+        if (grinder_prefs->isKey("seed_probe3")) grinder_prefs->remove("seed_probe3");
+    }
+
+    Preferences bluetooth_prefs;
+    bluetooth_prefs.begin("bluetooth", false);
+    if (!bluetooth_prefs.isKey("startup")) {
+        bluetooth_prefs.putBool("startup", true);
+    }
+    bluetooth_prefs.end();
+
+    Preferences logging_prefs;
+    logging_prefs.begin("logging", false);
+    if (!logging_prefs.isKey("enabled")) {
+        logging_prefs.putBool("enabled", false);
+    }
+    logging_prefs.end();
+
+    Preferences swipe_prefs;
+    swipe_prefs.begin("swipe", false);
+    if (!swipe_prefs.isKey("enabled")) {
+        swipe_prefs.putBool("enabled", false);
+    }
+    swipe_prefs.end();
+}
 
 #if SYS_ENABLE_REALTIME_HEARTBEAT
 // Core 1 timing metrics (global scope for main loop access)
@@ -68,6 +116,7 @@ void setup() {
     }
     
     hardware_manager.init();
+    seed_default_preferences();
     profile_controller.init(hardware_manager.get_preferences());
     statistics_manager.init(hardware_manager.get_preferences());
     grind_controller.init(hardware_manager.get_load_cell(), hardware_manager.get_grinder(), hardware_manager.get_preferences());

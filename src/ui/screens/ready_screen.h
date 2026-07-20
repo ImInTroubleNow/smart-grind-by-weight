@@ -9,7 +9,9 @@ class ReadyScreen {
 private:
     lv_obj_t* screen;
     lv_obj_t* tabview;
-    lv_obj_t* profile_tabs[USER_PROFILE_COUNT];   // capacity; only [0, active_profile_count) populated
+    lv_obj_t* profile_tabs[USER_PROFILE_COUNT];   // capacity; all created at boot, unused slots hidden
+    lv_obj_t* name_labels[USER_PROFILE_COUNT];
+    lv_obj_t* volume_labels[USER_PROFILE_COUNT];
     lv_obj_t* weight_labels[USER_PROFILE_COUNT];
     lv_obj_t* menu_tab;
     lv_obj_t* menu_icon_button;
@@ -19,7 +21,7 @@ private:
     bool visible;
 public:
     void create(ProfileController* profile_controller);
-    void rebuild_for_style(ProfileController* profile_controller);
+    void sync_to_profile_style(ProfileController* profile_controller);
     void show();
     void hide();
     void update_profile_values(const float values[], int count, GrindMode mode);
@@ -35,7 +37,6 @@ public:
     int get_active_profile_count() const { return active_profile_count; }
 
 private:
-    void populate_tabs_and_dots(ProfileController* profile_controller);
-    void create_profile_page(lv_obj_t* parent, int profile_index, const char* profile_name, float weight, const char* volume_text);
+    void create_profile_page(lv_obj_t* parent, int profile_index);
     void create_menu_page(lv_obj_t* parent);
 };

@@ -231,7 +231,10 @@ public:
     float get_time_remaining_seconds() const;
     static constexpr const char* PREF_KEY_PRIME_ENABLED = "prime_enabled";
     static constexpr const char* PREF_KEY_GRINDER_MODE = "grinder_mode";
-    static constexpr const char* PREF_KEY_GRINDER_AMOUNT_G = "grinder_amount_g";
+    // NVS keys are capped at 15 chars - "grinder_amount_g" (16) silently
+    // failed every write with KEY_TOO_LONG, meaning this preference never
+    // actually persisted. Renamed to fit the limit.
+    static constexpr const char* PREF_KEY_GRINDER_AMOUNT_G = "grind_amount_g";
     static constexpr const char* PREF_KEY_GRIND_FRESHNESS_HOURS = "freshness_hrs";
     static constexpr const char* PREF_KEY_LAST_GRIND_RUNTIME = "last_grind_ms";
     GrindMode get_mode() const { return mode; }

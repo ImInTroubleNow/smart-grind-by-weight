@@ -371,11 +371,13 @@ void MenuUIController::apply_profile_style(ProfileStyle style) {
     ui_manager_->current_tab = ui_manager_->profile_controller->get_current_profile();
 
     // Ready screen is hidden while the Menu is open (this handler only fires
-    // from a menu button), so rebuilding its tabview here is invisible to
-    // the user until they navigate back.
-    ui_manager_->ready_screen.rebuild_for_style(ui_manager_->profile_controller);
+    // from a menu button), so re-syncing its tabs here is invisible to the
+    // user until they navigate back. This only relabels/shows/hides the
+    // tabview's existing (permanent) children - it never destroys or
+    // recreates the tabview itself, so its event callbacks stay attached
+    // and don't need re-registering.
+    ui_manager_->ready_screen.sync_to_profile_style(ui_manager_->profile_controller);
     if (ui_manager_->ready_controller_) {
-        ui_manager_->ready_controller_->register_tabview_events();
         ui_manager_->ready_controller_->refresh_profiles();
     }
 
