@@ -294,13 +294,22 @@ Access via **Menu → Diagnostics → Noise Floor**.
 ## 📱 Usage Guide
 
 ### Grinding Profiles
-All profiles are fully customizable. Default grind-by-weight targets (fallback time values shown in parenthesis):
-- **2 Cups**: 14 g (8 s)
-- **4 Cups**: 29 g (16 s)
-- **6 Cups**: 43 g (24 s)
-- **8 Cups**: 58 g (32 s)
-- **10 Cups**: 72 g (40 s)
-- **Custom**: 21.5 g (12 s)
+All profiles are fully customizable. The Ready screen shows one of two switchable **Profile Styles** (Menu → Grind Settings → Profile Style), each with its own independently-saved weights/times:
+
+**Drip Coffee** (default) — grind-by-weight targets, fallback time values shown in parenthesis:
+- **2 Cups**: 15.6 g (8.7 s)
+- **4 Cups**: 31.2 g (17.3 s)
+- **6 Cups**: 46.8 g (26.0 s)
+- **8 Cups**: 62.5 g (34.7 s)
+- **10 Cups**: 78.1 g (43.3 s)
+- **Custom**: 21.5 g (12.0 s)
+
+**Espresso** — restores the classic Single/Double profile set:
+- **Single**: 9.0 g (5.0 s)
+- **Double**: 18.0 g (10.0 s)
+- **Custom**: 21.5 g (12.0 s)
+
+Switching styles never overwrites the other style's saved edits, so you can tune Drip and Espresso independently and swap between them freely.
 
 > 💡 **Tip** – the target label always shows the active unit (`g` or `s`). Long-press to edit in whichever mode you are currently using.
 
@@ -314,6 +323,7 @@ All profiles are fully customizable. Default grind-by-weight targets (fallback t
 
 ### Grind Settings
 Access **Menu → Grind Settings** to configure:
+- **Profile Style**: Switch the Ready screen between **Drip Coffee** (2/4/6/8/10 Cup + Custom) and **Espresso** (Single/Double/Custom). Each style keeps its own saved weights/times independently, so switching back and forth never loses your edits.
 - **Swipe Gestures**: Enable/disable vertical swipe gestures for mode switching (default: disabled)
 - **Time Mode**: Directly toggle between Weight and Time modes regardless of swipe setting
 - **Start on Cup**: Start the active profile automatically when the scale gains ≈50 g within ~2 s (after a short post-boot warmup)
@@ -355,7 +365,9 @@ Need a simple live readout? Open **Menu → Scale** to jump into a full-screen w
 
 ```
 Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode if enabled)
+| Tab count/names depend on the active Profile Style (Menu > Grind Settings):
 |
+| -- Drip Coffee style (default) --
 +-- 2 Cups Profile
 |   |-- Weight display (long press to edit)
 |   \-- GRIND button (red=weight, blue=time)
@@ -381,6 +393,11 @@ Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode i
 |   \-- GRIND button (red=weight, blue=time)
 |   \-- Time mode completion: OK + PULSE buttons
 |
+| -- Espresso style (alternate) --
+| +-- Single Profile
+| +-- Double Profile
+| \-- Custom Profile
+|
 \-- Menu (scrollable hub)
     |
     +-- Tools (quick actions)
@@ -401,6 +418,7 @@ Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode i
     |   |   \-- Screensaver brightness slider
     |   |
     |   \-- Grind Settings
+    |       |-- Profile Style radio (Drip Coffee / Espresso, independently saved)
     |       |-- Swipe Gestures toggle (enable/disable vertical swipes)
     |       |-- Time Mode toggle (direct weight/time mode selection)
     |       |-- Start on Cup toggle (start when ≈50 g arrives within ~2 s)

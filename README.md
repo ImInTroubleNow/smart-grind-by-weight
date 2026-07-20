@@ -34,7 +34,7 @@ The Smart Grind-by-Weight is a user-friendly, touch interface-driven, highly acc
 
 ## ✨ Features
 
-- **User-friendly interface** with 6 profiles: 2/4/6/8/10 Cups, plus a Custom profile
+- **User-friendly interface** with 6 profiles: 2/4/6/8/10 Cups, plus a Custom profile — or switch to an **Espresso** profile style (Single/Double/Custom) in Menu → Grind Settings, each style keeping its own independently-saved weights/times
 - **Beautiful display** with simple graphics or detailed charts (easily switchable)
 - **High accuracy**: ±0.03g error tolerance  
 - **Zero-shot learning**: Algorithm adapts instantly to any grind size, bean setting, humidity etc. without manual tuning
