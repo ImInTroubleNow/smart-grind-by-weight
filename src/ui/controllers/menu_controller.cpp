@@ -47,8 +47,10 @@ void MenuUIController::register_events() {
     EventBridgeLVGL::register_handler(ET::LOGGING_TOGGLE, [this](lv_event_t*) { handle_logging_toggle(); });
 
     EventBridgeLVGL::register_handler(ET::GRIND_MODE_SWIPE_TOGGLE, [this](lv_event_t*) { handle_grind_mode_swipe_toggle(); });
-    EventBridgeLVGL::register_handler(ET::GRIND_MODE_RADIO_BUTTON, [this](lv_event_t*) { handle_grind_mode_radio_button(); });
-    EventBridgeLVGL::register_handler(ET::PROFILE_STYLE_RADIO_BUTTON, [this](lv_event_t*) { handle_profile_style_radio_button(); });
+    EventBridgeLVGL::register_handler(ET::PROFILE_STYLE_SELECT_DRIP, [this](lv_event_t*) { handle_profile_style_select_drip(); });
+    EventBridgeLVGL::register_handler(ET::PROFILE_STYLE_SELECT_ESPRESSO, [this](lv_event_t*) { handle_profile_style_select_espresso(); });
+    EventBridgeLVGL::register_handler(ET::GRIND_MODE_SELECT_WEIGHT_TIME, [this](lv_event_t*) { handle_grind_mode_select_weight_time(); });
+    EventBridgeLVGL::register_handler(ET::GRIND_MODE_SELECT_TIME_ONLY, [this](lv_event_t*) { handle_grind_mode_select_time_only(); });
     EventBridgeLVGL::register_handler(ET::AUTO_START_TOGGLE, [this](lv_event_t*) { handle_auto_start_toggle(); });
     EventBridgeLVGL::register_handler(ET::AUTO_RETURN_TOGGLE, [this](lv_event_t*) { handle_auto_return_toggle(); });
     EventBridgeLVGL::register_handler(ET::GRINDER_PURGE_MODE_RADIO_BUTTON, [this](lv_event_t*) { handle_grinder_purge_mode_radio_button(); });
@@ -319,33 +321,85 @@ void MenuUIController::handle_grind_mode_swipe_toggle() {
     prefs.end();
 
     LOG_DEBUG_PRINTLN(swipe_enabled ? "Grind mode swipe gestures enabled" : "Grind mode swipe gestures disabled");
+
+    // Swipe is the only way to reach Time mode within Weight & Time style.
+    // If it's being turned off while currently parked in Time mode, there
+    // would be no way back to Weight mode - fall back to Weight automatically.
+    if (!swipe_enabled && ui_manager_->profile_controller &&
+        !ui_manager_->profile_controller->is_time_only_mode() &&
+        ui_manager_->current_mode == GrindMode::TIME) {
+
+        ui_manager_->current_mode = GrindMode::WEIGHT;
+        ui_manager_->profile_controller->set_grind_mode(ui_manager_->current_mode);
+
+        if (ui_manager_->ready_controller_) {
+            ui_manager_->ready_controller_->refresh_profiles();
+        }
+        ui_manager_->edit_target = get_current_profile_target(*ui_manager_->profile_controller, ui_manager_->current_mode);
+        if (ui_manager_->state_machine->is_state(UIState::EDIT)) {
+            if (ui_manager_->edit_controller_) {
+                ui_manager_->edit_controller_->update_display();
+            }
+        }
+
+        ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
+        if (ui_manager_->state_machine->is_state(UIState::GRINDING) ||
+            ui_manager_->state_machine->is_state(UIState::GRIND_COMPLETE)) {
+            if (ui_manager_->grinding_controller_) {
+                ui_manager_->grinding_controller_->update_grinding_targets();
+            }
+        }
+
+        if (ui_manager_->grinding_controller_) {
+            ui_manager_->grinding_controller_->update_grind_button_icon();
+        }
+
+        LOG_DEBUG_PRINTLN("Swipe disabled while in Time mode - falling back to Weight mode");
+    }
 }
 
-void MenuUIController::handle_grind_mode_radio_button() {
+void MenuUIController::handle_profile_style_select_drip() { apply_profile_style(ProfileStyle::DRIP); }
+void MenuUIController::handle_profile_style_select_espresso() { apply_profile_style(ProfileStyle::ESPRESSO); }
+void MenuUIController::handle_grind_mode_select_weight_time() { apply_grind_type(false); }
+void MenuUIController::handle_grind_mode_select_time_only() { apply_grind_type(true); }
+
+void MenuUIController::apply_profile_style(ProfileStyle style) {
     if (!ui_manager_ || !ui_manager_->profile_controller) return;
+    if (style == ui_manager_->profile_controller->get_profile_style()) return;
 
-    lv_obj_t* radio_group = ui_manager_->menu_screen.get_grind_mode_radio_group();
-    if (!radio_group) return;
+    ui_manager_->profile_controller->set_profile_style(style);
+    ui_manager_->current_tab = ui_manager_->profile_controller->get_current_profile();
 
-    int selected_index = radio_button_group_get_selection(radio_group);
-    if (selected_index < 0) return;
+    // Ready screen is hidden while the Menu is open (this handler only fires
+    // from a menu button), so rebuilding its tabview here is invisible to
+    // the user until they navigate back.
+    ui_manager_->ready_screen.rebuild_for_style(ui_manager_->profile_controller);
+    if (ui_manager_->ready_controller_) {
+        ui_manager_->ready_controller_->register_tabview_events();
+        ui_manager_->ready_controller_->refresh_profiles();
+    }
 
-    bool want_time_only = (selected_index == 1);
+    ui_manager_->menu_screen.sync_profile_style_buttons(style == ProfileStyle::ESPRESSO);
+
+    LOG_DEBUG_PRINTLN(style == ProfileStyle::ESPRESSO ? "Profile style switched to Espresso" : "Profile style switched to Drip Coffee");
+}
+
+void MenuUIController::apply_grind_type(bool want_time_only) {
+    if (!ui_manager_ || !ui_manager_->profile_controller) return;
     bool currently_time_only = ui_manager_->profile_controller->is_time_only_mode();
     if (want_time_only == currently_time_only) return;
 
     if (want_time_only) {
         ui_manager_->profile_controller->set_time_only_mode(true);
         ui_manager_->current_mode = GrindMode::TIME;
-        ui_manager_->menu_screen.set_swipe_row_visible(false);
-        LOG_DEBUG_PRINTLN("Time Only mode locked in via radio button");
+        LOG_DEBUG_PRINTLN("Time Only mode locked in");
     } else {
         auto* sensor = ui_manager_->get_hardware_manager() ? ui_manager_->get_hardware_manager()->get_weight_sensor() : nullptr;
         bool is_calibrated = sensor && sensor->is_calibrated();
 
         if (!is_calibrated) {
-            // Revert the radio to Time Only until calibration actually completes.
-            radio_button_group_set_selection(radio_group, 1);
+            // Buttons never get recolored here, so Time Only stays visually
+            // active until calibration actually completes.
             if (ui_manager_->calibration_controller_) {
                 ui_manager_->calibration_controller_->request_unlock_calibration();
             }
@@ -356,9 +410,10 @@ void MenuUIController::handle_grind_mode_radio_button() {
 
         ui_manager_->profile_controller->set_time_only_mode(false);
         ui_manager_->current_mode = GrindMode::WEIGHT;
-        ui_manager_->menu_screen.set_swipe_row_visible(true);
-        LOG_DEBUG_PRINTLN("Weight & Time mode unlocked via radio button");
+        LOG_DEBUG_PRINTLN("Weight & Time mode unlocked");
     }
+
+    ui_manager_->menu_screen.sync_grind_type_buttons(want_time_only);
 
     if (ui_manager_->ready_controller_) {
         ui_manager_->ready_controller_->refresh_profiles();
@@ -369,33 +424,6 @@ void MenuUIController::handle_grind_mode_radio_button() {
             ui_manager_->edit_controller_->update_display();
         }
     }
-}
-
-void MenuUIController::handle_profile_style_radio_button() {
-    if (!ui_manager_ || !ui_manager_->profile_controller) return;
-
-    lv_obj_t* radio_group = ui_manager_->menu_screen.get_profile_style_radio_group();
-    if (!radio_group) return;
-
-    int selected_index = radio_button_group_get_selection(radio_group);
-    if (selected_index < 0) return;
-
-    ProfileStyle new_style = (selected_index == 1) ? ProfileStyle::ESPRESSO : ProfileStyle::DRIP;
-    if (new_style == ui_manager_->profile_controller->get_profile_style()) return;
-
-    ui_manager_->profile_controller->set_profile_style(new_style);
-    ui_manager_->current_tab = ui_manager_->profile_controller->get_current_profile();
-
-    // Ready screen is hidden while the Menu is open (this handler only fires
-    // from a menu radio button), so rebuilding its tabview here is invisible
-    // to the user until they navigate back.
-    ui_manager_->ready_screen.rebuild_for_style(ui_manager_->profile_controller);
-    if (ui_manager_->ready_controller_) {
-        ui_manager_->ready_controller_->register_tabview_events();
-        ui_manager_->ready_controller_->refresh_profiles();
-    }
-
-    LOG_DEBUG_PRINTLN(new_style == ProfileStyle::ESPRESSO ? "Profile style switched to Espresso" : "Profile style switched to Drip Coffee");
 }
 
 void MenuUIController::handle_auto_start_toggle() {

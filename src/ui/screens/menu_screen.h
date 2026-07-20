@@ -16,6 +16,8 @@ private:
     lv_obj_t* bluetooth_page;
     lv_obj_t* display_page;
     lv_obj_t* grind_mode_page;
+    lv_obj_t* profile_mode_page;
+    lv_obj_t* grind_type_page;
     lv_obj_t* data_page;
     lv_obj_t* stats_page;
     lv_obj_t* diagnostics_page;
@@ -59,9 +61,11 @@ private:
     lv_obj_t* purge_button;
     lv_obj_t* reset_button;
     
-    // Grind mode tab elements
-    lv_obj_t* profile_style_radio_group;
-    lv_obj_t* grind_mode_radio_group;
+    // Modes tab elements
+    lv_obj_t* profile_style_drip_button;
+    lv_obj_t* profile_style_espresso_button;
+    lv_obj_t* grind_type_weight_button;
+    lv_obj_t* grind_type_time_only_button;
     lv_obj_t* grind_mode_swipe_toggle;
     lv_obj_t* grind_mode_swipe_row;
     lv_obj_t* grind_mode_swipe_desc_label;
@@ -117,6 +121,8 @@ public:
     void update_bluetooth_startup_toggle();
     void update_logging_toggle();
     void update_grind_mode_toggles();
+    void sync_profile_style_buttons(bool espresso_selected);
+    void sync_grind_type_buttons(bool time_only);
     void set_swipe_row_visible(bool visible);
     void update_grinder_purge_amount_label(float amount_g);
     void update_grind_freshness_hours_label(float hours);
@@ -141,8 +147,6 @@ public:
     lv_obj_t* get_brightness_normal_slider() const { return brightness_normal_slider; }
     lv_obj_t* get_brightness_screensaver_slider() const { return brightness_screensaver_slider; }
     lv_obj_t* get_auto_dim_timeout_slider() const { return auto_dim_timeout_slider; }
-    lv_obj_t* get_profile_style_radio_group() const { return profile_style_radio_group; }
-    lv_obj_t* get_grind_mode_radio_group() const { return grind_mode_radio_group; }
     lv_obj_t* get_grind_mode_swipe_toggle() const { return grind_mode_swipe_toggle; }
     lv_obj_t* get_auto_start_toggle() const { return auto_start_toggle; }
     lv_obj_t* get_auto_return_toggle() const { return auto_return_toggle; }
@@ -156,6 +160,8 @@ private:
     void create_bluetooth_page(lv_obj_t* parent);
     void create_display_page(lv_obj_t* parent);
     void create_grind_mode_page(lv_obj_t* parent);
+    void create_profile_mode_page(lv_obj_t* parent);
+    void create_grind_type_page(lv_obj_t* parent);
     void create_scale_page(lv_obj_t* parent);
     void create_data_page(lv_obj_t* parent);
     void create_stats_page(lv_obj_t* parent);

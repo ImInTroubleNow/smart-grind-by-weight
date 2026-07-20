@@ -131,7 +131,13 @@ void MenuScreen::create_menu_ui() {
     
     grind_mode_page = lv_menu_page_create(menu, "Grind Setup");
     create_grind_mode_page(grind_mode_page);
-    
+
+    profile_mode_page = lv_menu_page_create(menu, "Profile Mode");
+    create_profile_mode_page(profile_mode_page);
+
+    grind_type_page = lv_menu_page_create(menu, "Grind Mode");
+    create_grind_type_page(grind_type_page);
+
     scale_page = lv_menu_page_create(menu, "Scale");
     create_scale_page(scale_page);
 
@@ -145,6 +151,13 @@ void MenuScreen::create_menu_ui() {
     create_diagnostics_page(diagnostics_page);
 
     // Create menu items grouped with separators
+    create_separator(main_page, "Modes");
+    lv_obj_t* profile_mode_item = create_menu_item(main_page, "Profile Mode");
+    lv_menu_set_load_page_event(menu, profile_mode_item, profile_mode_page);
+
+    lv_obj_t* grind_type_item = create_menu_item(main_page, "Grind Mode");
+    lv_menu_set_load_page_event(menu, grind_type_item, grind_type_page);
+
     create_separator(main_page, "Tools");
     scale_item = create_menu_item(main_page, "Scale");
     cal_button = create_menu_item(main_page, "Calibrate");
@@ -329,18 +342,6 @@ void MenuScreen::create_display_page(lv_obj_t* parent) {
 }
 
 
-// Callback for profile style radio button selection
-static void profile_style_callback(int selected_index, void* user_data) {
-    // Trigger the event system instead of handling directly
-    EventBridgeLVGL::handle_event(EventBridgeLVGL::EventType::PROFILE_STYLE_RADIO_BUTTON, nullptr);
-}
-
-// Callback for grind mode radio button selection
-static void grind_mode_callback(int selected_index, void* user_data) {
-    // Trigger the event system instead of handling directly
-    EventBridgeLVGL::handle_event(EventBridgeLVGL::EventType::GRIND_MODE_RADIO_BUTTON, nullptr);
-}
-
 // Callback for grinder purge mode radio button selection
 static void grinder_purge_mode_callback(int selected_index, void* user_data) {
     // Trigger the event system instead of handling directly
@@ -355,53 +356,6 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
     // Enable vertical scrolling on the grind mode page
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
-
-    // Profile Style separator/label
-    create_separator(parent, "Profile Style");
-
-    const char* profile_styles[] = {"Drip Coffee", "Espresso"};
-    profile_style_radio_group = create_radio_button_group(
-        parent,
-        profile_styles,
-        2,
-        LV_FLEX_FLOW_COLUMN,
-        0,  // Drip Coffee initially selected; re-synced in update_grind_mode_toggles()
-        240, 70,  // Width, Height
-        profile_style_callback,
-        this
-    );
-
-    create_description_label(parent, "Switch between 6 drip profiles and 3 espresso profiles. Each style keeps its own saved weights/times.");
-
-    // Mode Selection separator/label
-    create_separator(parent, "Mode Selection");
-
-    // Radio button group for grind mode selection at top.
-    // Stacked in a column (rather than side-by-side) since "Weight & Time" is
-    // too wide to fit legibly next to a second button on this 280px display.
-    const char* grind_modes[] = {"Weight & Time", "Time Only"};
-    // Time Only highlights in accent blue when selected, matching the
-    // start button's accent color while grinding in time mode.
-    const uint32_t grind_mode_colors[] = {THEME_COLOR_PRIMARY, THEME_COLOR_ACCENT};
-    grind_mode_radio_group = create_radio_button_group(
-        parent,
-        grind_modes,
-        2,
-        LV_FLEX_FLOW_COLUMN,
-        0,  // Weight & Time initially selected
-        240, 70,  // Width, Height
-        grind_mode_callback,
-        this,
-        grind_mode_colors
-    );
-
-    create_description_label(parent, "Time Only skips weight calibration and disables grind-by-weight until switched back here.");
-
-    // Swipe toggle using existing pattern - hidden while Time Only is locked in,
-    // since there's no weight mode left to swipe to.
-    grind_mode_swipe_row = create_toggle_row(parent, "Swipe", &grind_mode_swipe_toggle);
-    grind_mode_swipe_desc_label = create_description_label(
-        parent, "Swipe vertically on the Ready screen to switch between Weight and Time modes.");
 
     // Automatic actions section
     create_separator(parent, "Automation");
@@ -443,10 +397,6 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
 
     // Register events for the toggles (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
-    if (grind_mode_swipe_toggle) {
-        lv_obj_add_event_cb(grind_mode_swipe_toggle, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
-                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_MODE_SWIPE_TOGGLE)));
-    }
     if (auto_start_toggle) {
         lv_obj_add_event_cb(auto_start_toggle, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::AUTO_START_TOGGLE)));
@@ -466,6 +416,70 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_FRESHNESS_HOURS_SLIDER)));
         lv_obj_add_event_cb(grind_freshness_hours_slider, EventBridgeLVGL::dispatch_event, LV_EVENT_RELEASED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_FRESHNESS_HOURS_SLIDER_RELEASED)));
+    }
+}
+
+void MenuScreen::create_profile_mode_page(lv_obj_t* parent) {
+    lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_top(parent, 12, 0);
+
+    lv_obj_set_scroll_dir(parent, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
+
+    profile_style_drip_button = create_button(parent, "Drip Coffee", lv_color_hex(THEME_COLOR_PRIMARY), 240, 70, &lv_font_montserrat_24);
+    create_description_label(parent, "Displays profiles for grinding drip coffee.");
+
+    profile_style_espresso_button = create_button(parent, "Espresso", lv_color_hex(THEME_COLOR_NEUTRAL), 240, 70, &lv_font_montserrat_24);
+    create_description_label(parent, "Displays profiles for grinding espresso.");
+
+    using ET = EventBridgeLVGL::EventType;
+    if (profile_style_drip_button) {
+        lv_obj_add_event_cb(profile_style_drip_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::PROFILE_STYLE_SELECT_DRIP)));
+    }
+    if (profile_style_espresso_button) {
+        lv_obj_add_event_cb(profile_style_espresso_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::PROFILE_STYLE_SELECT_ESPRESSO)));
+    }
+}
+
+void MenuScreen::create_grind_type_page(lv_obj_t* parent) {
+    lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_top(parent, 12, 0);
+
+    lv_obj_set_scroll_dir(parent, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
+
+    // Time Only highlights in accent blue when selected, matching the
+    // start button's accent color while grinding in time mode.
+    grind_type_weight_button = create_button(parent, "Weight & Time", lv_color_hex(THEME_COLOR_PRIMARY), 240, 70, &lv_font_montserrat_24);
+    create_description_label(parent, "Pick between weight or time based grinding.");
+
+    // Swipe toggle using existing pattern - hidden while Time Only is locked in,
+    // since there's no weight mode left to swipe to.
+    grind_mode_swipe_row = create_toggle_row(parent, "Swipe", &grind_mode_swipe_toggle);
+    grind_mode_swipe_desc_label = create_description_label(
+        parent, "Swipe up or down to toggle between weight and time grinding.");
+
+    grind_type_time_only_button = create_button(parent, "Time Only", lv_color_hex(THEME_COLOR_NEUTRAL), 240, 70, &lv_font_montserrat_24);
+    create_description_label(parent, "Skips weight calibration and disables weight based grinding.");
+
+    using ET = EventBridgeLVGL::EventType;
+    if (grind_type_weight_button) {
+        lv_obj_add_event_cb(grind_type_weight_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_MODE_SELECT_WEIGHT_TIME)));
+    }
+    if (grind_type_time_only_button) {
+        lv_obj_add_event_cb(grind_type_time_only_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_MODE_SELECT_TIME_ONLY)));
+    }
+    if (grind_mode_swipe_toggle) {
+        lv_obj_add_event_cb(grind_mode_swipe_toggle, EventBridgeLVGL::dispatch_event, LV_EVENT_VALUE_CHANGED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_MODE_SWIPE_TOGGLE)));
     }
 }
 
@@ -1165,6 +1179,29 @@ void MenuScreen::update_scale_weight(float weight) {
     lv_label_set_text(scale_weight_label, buffer);
 }
 
+void MenuScreen::sync_profile_style_buttons(bool espresso_selected) {
+    if (profile_style_drip_button) {
+        lv_obj_set_style_bg_color(profile_style_drip_button,
+            lv_color_hex(espresso_selected ? THEME_COLOR_NEUTRAL : THEME_COLOR_PRIMARY), 0);
+    }
+    if (profile_style_espresso_button) {
+        lv_obj_set_style_bg_color(profile_style_espresso_button,
+            lv_color_hex(espresso_selected ? THEME_COLOR_PRIMARY : THEME_COLOR_NEUTRAL), 0);
+    }
+}
+
+void MenuScreen::sync_grind_type_buttons(bool time_only) {
+    if (grind_type_weight_button) {
+        lv_obj_set_style_bg_color(grind_type_weight_button,
+            lv_color_hex(time_only ? THEME_COLOR_NEUTRAL : THEME_COLOR_PRIMARY), 0);
+    }
+    if (grind_type_time_only_button) {
+        lv_obj_set_style_bg_color(grind_type_time_only_button,
+            lv_color_hex(time_only ? THEME_COLOR_ACCENT : THEME_COLOR_NEUTRAL), 0);
+    }
+    set_swipe_row_visible(!time_only);
+}
+
 void MenuScreen::update_grind_mode_toggles() {
     // Read swipe enabled from "swipe" namespace
     Preferences swipe_prefs;
@@ -1186,17 +1223,8 @@ void MenuScreen::update_grind_mode_toggles() {
             profile_style_index = main_prefs->getInt("profile_style", 0);
         }
     }
-    int mode_index = time_only_mode ? 1 : 0;
-
-    if (grind_mode_radio_group) {
-        radio_button_group_set_selection(grind_mode_radio_group, mode_index);
-    }
-
-    if (profile_style_radio_group) {
-        radio_button_group_set_selection(profile_style_radio_group, profile_style_index);
-    }
-
-    set_swipe_row_visible(!time_only_mode);
+    sync_grind_type_buttons(time_only_mode);
+    sync_profile_style_buttons(profile_style_index == 1);
 
     if (grind_mode_swipe_toggle) {
         if (swipe_enabled) {

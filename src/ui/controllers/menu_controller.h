@@ -1,5 +1,6 @@
 #pragma once
 #include <lvgl.h>
+#include "../../controllers/profile_style.h"
 
 class UIManager;
 
@@ -25,8 +26,10 @@ public:
     void handle_ble_startup_toggle();
     void handle_logging_toggle();
     void handle_grind_mode_swipe_toggle();
-    void handle_grind_mode_radio_button();
-    void handle_profile_style_radio_button();
+    void handle_profile_style_select_drip();
+    void handle_profile_style_select_espresso();
+    void handle_grind_mode_select_weight_time();
+    void handle_grind_mode_select_time_only();
     void handle_auto_start_toggle();
     void handle_auto_return_toggle();
     void handle_grinder_purge_mode_radio_button();
@@ -49,6 +52,8 @@ private:
     UIManager* ui_manager_;
     lv_timer_t* motor_timer_{};
 
+    void apply_profile_style(ProfileStyle style);
+    void apply_grind_type(bool time_only);
     void perform_factory_reset();
     void execute_purge_operation();
     void run_motor_test();
