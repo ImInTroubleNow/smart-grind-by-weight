@@ -25,6 +25,7 @@ Complete build instructions, parts list, and usage guide for the Smart Grind-by-
   - [📱 Usage Guide](#-usage-guide)
     - [Grinding Profiles](#grinding-profiles)
     - [Navigation](#navigation)
+    - [Modes](#modes)
     - [Grind Settings](#grind-settings)
     - [Basic Operation](#basic-operation)
     - [Quick Scale View](#quick-scale-view)
@@ -294,7 +295,7 @@ Access via **Menu → Diagnostics → Noise Floor**.
 ## 📱 Usage Guide
 
 ### Grinding Profiles
-All profiles are fully customizable. The Ready screen shows one of two switchable **Profile Styles** (Menu → Grind Settings → Profile Style), each with its own independently-saved weights/times:
+All profiles are fully customizable. The Ready screen shows one of two switchable **Profile Styles** (Menu → Modes → Profile Mode), each with its own independently-saved weights/times:
 
 **Drip Coffee** (default) — grind-by-weight targets, fallback time values shown in parenthesis:
 - **2 Cups**: 15.6 g (8.7 s)
@@ -315,17 +316,28 @@ Switching styles never overwrites the other style's saved edits, so you can tune
 
 ### Navigation
 - **Swipe left/right** to navigate between menu tabs
-- **Swipe up/down** on the ready screen to toggle between grind-by-weight and grind-by-time modes (when enabled in Menu → Grind Settings)
+- **Swipe up/down** on the ready screen to toggle between grind-by-weight and grind-by-time modes (when enabled in Menu → Modes → Grind Mode)
 - **Tap** to select profiles or buttons
 - **Long press** on profile targets to edit/customize them
 
 > **Color cues:** The GRIND button background turns **red** in weight mode and **blue** in time mode, so you always know which behaviour is armed.
 
+### Modes
+Access **Menu → Modes** for two dedicated pages, each button paired with a short description directly beneath it:
+
+**Profile Mode**
+- **Drip Coffee**: Displays profiles for grinding drip coffee (2/4/6/8/10 Cup + Custom). Default.
+- **Espresso**: Displays profiles for grinding espresso (Single/Double/Custom).
+- Each style keeps its own saved weights/times independently, so switching back and forth never loses your edits.
+
+**Grind Mode**
+- **Weight & Time**: Pick between weight or time based grinding.
+  - **Swipe** *(only shown while Weight & Time is active)*: Swipe up or down to toggle between weight and time grinding. Turning Swipe off while parked in Time mode automatically falls back to Weight mode, so you're never stuck without a way back.
+- **Time Only**: Skips weight calibration and disables weight based grinding. Boots straight to READY even if the load cell was never calibrated.
+- Switching back to Weight & Time is immediate if the load cell is already calibrated; otherwise it launches the calibration wizard as a courtesy.
+
 ### Grind Settings
 Access **Menu → Grind Settings** to configure:
-- **Profile Style**: Switch the Ready screen between **Drip Coffee** (2/4/6/8/10 Cup + Custom) and **Espresso** (Single/Double/Custom). Each style keeps its own saved weights/times independently, so switching back and forth never loses your edits.
-- **Swipe Gestures**: Enable/disable vertical swipe gestures for mode switching (default: disabled)
-- **Time Mode**: Directly toggle between Weight and Time modes regardless of swipe setting
 - **Start on Cup**: Start the active profile automatically when the scale gains ≈50 g within ~2 s (after a short post-boot warmup)
 - **Return on Removal**: Leave the completion screen as soon as that cup weight drops back off the scale
 - **Purging** *(Advanced)*: Control how the grinder saturates itself before weight-mode grinding
@@ -347,7 +359,7 @@ These steps describe the default grind-by-weight workflow:
 
 > Optional automation (Menu → Grind Settings): enable the new auto-start toggle to begin grinding as soon as the scale sees ~50 g arrive (no tare needed); the system waits for the load cell to gather enough quiet samples before arming itself, then auto-return jumps back to Ready whenever that cup is lifted off again.
 
-Need the stock timed run? Enable swipe gestures in **Menu → Grind Settings**, then swipe up or down on the ready screen before you start; the GRIND button background turns blue to confirm time mode is active (red = weight). Alternatively, use the direct **Time Mode** toggle in the menu.
+Need the stock timed run? Enable Swipe in **Menu → Modes → Grind Mode**, then swipe up or down on the ready screen before you start; the GRIND button background turns blue to confirm time mode is active (red = weight). Always grinding by time? Select **Time Only** on that same page instead to lock it in permanently (and skip weight calibration entirely).
 
 > **Time mode pulse button:** In time mode completion, a "+" button appears next to OK for 100ms additional grinding pulses.
 
@@ -365,7 +377,7 @@ Need a simple live readout? Open **Menu → Scale** to jump into a full-screen w
 
 ```
 Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode if enabled)
-| Tab count/names depend on the active Profile Style (Menu > Grind Settings):
+| Tab count/names depend on the active Profile Style (Menu > Modes > Profile Mode):
 |
 | -- Drip Coffee style (default) --
 +-- 2 Cups Profile
@@ -400,6 +412,16 @@ Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode i
 |
 \-- Menu (scrollable hub)
     |
+    +-- Modes
+    |   +-- Profile Mode
+    |   |   |-- Drip Coffee button + description
+    |   |   \-- Espresso button + description
+    |   |
+    |   \-- Grind Mode
+    |       |-- Weight & Time button + description
+    |       |-- Swipe toggle + description (shown only while Weight & Time is active)
+    |       \-- Time Only button + description
+    |
     +-- Tools (quick actions)
     |   |-- Scale (live weight view with Tare action)
     |   |-- Calibrate (launch calibration workflow)
@@ -418,9 +440,6 @@ Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode i
     |   |   \-- Screensaver brightness slider
     |   |
     |   \-- Grind Settings
-    |       |-- Profile Style radio (Drip Coffee / Espresso, independently saved)
-    |       |-- Swipe Gestures toggle (enable/disable vertical swipes)
-    |       |-- Time Mode toggle (direct weight/time mode selection)
     |       |-- Start on Cup toggle (start when ≈50 g arrives within ~2 s)
     |       |-- Return on Removal toggle (drop back to Ready when that weight leaves)
     |       |-- Purging (Prime/Purge radio buttons)

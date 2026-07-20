@@ -36,7 +36,7 @@ python3 tools/grinder.py analyze
 - **GrindController**: 9-phase state machine with predictive flow control, 10 pulse corrections, mechanical instability detection, and time mode additional pulses
 - **LoadCell (HX711)**: Multi-mode precision weight measurement (instant, smoothed, filtered), calibration flag, noise diagnostics
 - **DiagnosticsController**: System health monitoring (calibration status, sustained noise, mechanical instability), state persistence, hysteresis, priority-based warnings
-- **UIManager**: 7 screens with LVGL integration; menu page surfaces quick Tools (Scale view, Calibrate, Tune Pulses, Motor Test) followed by Settings (Bluetooth, Display, Grind Settings) and Info sections (Diagnostics, System Info, Logs & Data, Lifetime Stats), warning icon indicator, split-button layout for time mode pulses
+- **UIManager**: 7 screens with LVGL integration; menu page surfaces Modes (Profile Mode, Grind Mode) first, followed by quick Tools (Scale view, Calibrate, Tune Pulses, Motor Test), Settings (Bluetooth, Display, Grind Settings) and Info sections (Diagnostics, System Info, Logs & Data, Lifetime Stats), warning icon indicator, split-button layout for time mode pulses
 - **StateMachine**: Central state coordination (READY → GRINDING → GRIND_COMPLETE)
 
 **Update Intervals:** 20ms grind control, 25ms load cell (active), 50ms UI/hardware
@@ -58,15 +58,16 @@ python3 tools/grinder.py analyze
 
 **Time Mode Pulses:** Split-button completion screen (OK + PULSE), `TIME_ADDITIONAL_PULSE` phase, 100ms duration
 
-**Grind Settings:** Configurable through Menu → Grind Settings page
-- **Mode Selection**: Radio buttons — "Weight & Time" (both modes available, swipe to switch) vs "Time Only" (locked to time-based grinding)
-- **Time Only mode**: Skips the load-cell calibration boot gate entirely (boots straight to READY even if never calibrated) and disables grind-by-weight until switched back. The Swipe row (toggle + description) is hidden while locked in, since there's no weight mode to swipe to.
-- **Switching back to Weight & Time**: Immediate if the load cell is already calibrated; otherwise launches the calibration wizard as a courtesy — completing it or cancelling out both unlock Weight & Time (calibration is advisory app-wide, never a hard block)
-- **Swipe Gestures Toggle**: Enable/disable vertical swipe gestures for mode switching within Weight & Time mode (default: disabled)
-- **Automation**: Start on Cup and Return on Removal toggles
-- **Purging**: Radio buttons (Prime/Purge) and Amount slider (0.1g-5.0g)
-- **Preferences**: `swipe.enabled` (boolean), `grind_mode` (0=Weight, 1=Time), `time_only_mode` (boolean, default false — locks out Weight and skips calibration at boot), `chute_mode` (0=Prime, 1=Purge), `chute_amount_g` (float)
-- **Behavior**: Swipe gestures only work when enabled and Weight & Time mode is active; direct mode selection always works
+**Menu → Modes:** Two dedicated pages, each option button paired with its own inline description directly beneath it (not a shared description below the pair)
+- **Profile Mode page**: "Drip Coffee" (2/4/6/8/10 Cup + Custom, default) vs "Espresso" (Single/Double/Custom) — switches which profile set the Ready screen's tabview shows. Each style persists its own profile weights/times independently in NVS (separate `weight*`/`time*` vs `e_weight*`/`e_time*` keys); switching never overwrites the other style's saved edits. Ready screen tabview is destroyed and rebuilt (`ReadyScreen::rebuild_for_style()`) since LVGL's tabview has no tab-removal API. Preference: `profile_style` (int, 0=Drip default, 1=Espresso).
+- **Grind Mode page**: "Weight & Time" button + description, then (only visible while Weight & Time is active) the Swipe toggle + description, then "Time Only" button + description below that.
+  - **Time Only mode**: Skips the load-cell calibration boot gate entirely (boots straight to READY even if never calibrated) and disables grind-by-weight until switched back.
+  - **Switching back to Weight & Time**: Immediate if the load cell is already calibrated; otherwise launches the calibration wizard as a courtesy — completing it or cancelling out both unlock Weight & Time (calibration is advisory app-wide, never a hard block)
+  - **Swipe Gestures Toggle**: Enable/disable vertical swipe gestures for mode switching within Weight & Time mode (default: disabled). Turning Swipe off while parked in Time mode automatically falls back to Weight mode — Swipe is the only way to reach Time mode within Weight & Time style, so leaving it stuck in Time with Swipe off would strand the user with no way back.
+  - **Preferences**: `swipe.enabled` (boolean), `grind_mode` (0=Weight, 1=Time), `time_only_mode` (boolean, default false — locks out Weight and skips calibration at boot)
+  - **Behavior**: Swipe gestures only work when enabled and Weight & Time mode is active; direct button selection always works
+
+**Grind Settings:** Configurable through Menu → Grind Settings page — Automation (Start on Cup and Return on Removal toggles) and Purging (Radio buttons Prime/Purge and Amount slider 0.1g-5.0g) only (preferences per the Grinder Purge/Prime section above). Profile Style and Mode Selection now live under Menu → Modes.
 
 **Color Scheme (RGB565):**
 - `COLOR_PRIMARY`: 0xFF0000 (Red) - Primary theme color
