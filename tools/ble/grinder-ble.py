@@ -37,15 +37,16 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 def ensure_venv_requirements():
     """Ensure all required packages are installed in the project venv"""
+    import platform
     venv_dir = Path(__file__).parent.parent / "venv"
     requirements_file = Path(__file__).parent.parent / "requirements.txt"
-    
+
     if not venv_dir.exists():
         print(f"[ERROR] Virtual environment not found at {venv_dir}")
         print("Run: python3 -m venv tools/venv && source tools/venv/bin/activate && pip install -r tools/requirements.txt")
         return False
-    
-    pip_cmd = str(venv_dir / "bin" / "pip")
+
+    pip_cmd = str(venv_dir / "Scripts" / "pip.exe") if platform.system() == "Windows" else str(venv_dir / "bin" / "pip")
     
     # Check if requirements.txt exists
     if not requirements_file.exists():
@@ -391,8 +392,9 @@ class GrinderBLETool:
             patch_file.close()
             
             # Use detools from the project venv (ensured by ensure_venv_requirements)
+            import platform
             venv_dir = Path(__file__).parent.parent / "venv"
-            detools_cmd = str(venv_dir / "bin" / "detools")
+            detools_cmd = str(venv_dir / "Scripts" / "detools.exe") if platform.system() == "Windows" else str(venv_dir / "bin" / "detools")
 
             cmd = [detools_cmd, 'create_patch', '-c', 'heatshrink', str(old_firmware_path), new_firmware_path, patch_path]
             result = subprocess.run(cmd, capture_output=True, text=True)
