@@ -39,7 +39,9 @@ BluetoothManager::BluetoothManager()
     , sysinfo_sessions_characteristic(nullptr)
     , sysinfo_diagnostics_characteristic(nullptr)
     , device_connected(false)
-    , ble_enabled(false), debug_stream_active(false)
+    , ble_enabled(false)
+    , ble_stack_initialized(false)
+    , debug_stream_active(false)
     , enable_time(0)
     , timeout_ms(BLE_AUTO_DISABLE_TIMEOUT_MS)
     , last_disconnect_time(0)
@@ -103,7 +105,7 @@ bool BluetoothManager::dequeue_ui_status(char* out, size_t out_len) {
 
 void BluetoothManager::enable(unsigned long timeout_ms) {
     if (ble_enabled) return;
-    
+
     // Use default timeout if none specified
     if (timeout_ms == 0) {
         timeout_ms = BLE_AUTO_DISABLE_TIMEOUT_MS;
@@ -111,25 +113,33 @@ void BluetoothManager::enable(unsigned long timeout_ms) {
     this->timeout_ms = timeout_ms;
     unsigned long timeout_minutes = timeout_ms / 60000;
     log("Bluetooth: Enabling BLE with reduced power settings (%lum timeout)\n", timeout_minutes);
-    
+
     // Enable reduced power mode for BLE
     ota_handler.enable_ble_power_mode();
     enable_time = millis();
     last_disconnect_time = enable_time; // Start disconnected timeout from enable time
-    
+
+    // The BLE stack (device, server, services, characteristics) is only ever
+    // built once per boot. ESP-IDF's Bluedroid stack does not fully release its
+    // internal heap on BLEDevice::deinit(false), so a repeated init/deinit cycle
+    // (e.g. disable() on timeout, then a later re-enable) leaks on the order of
+    // 150-170KB of internal RAM every cycle - enough to crash the next enable()
+    // partway through characteristic creation. disable() below only stops
+    // advertising now, so this block never needs to run again after boot.
+    if (!ble_stack_initialized) {
     // Initialize BLE with delays for power stability
     BLEDevice::init(BLE_DEVICE_NAME);
-    
+
     // Request a larger MTU to improve throughput when the client supports it.
     // Some platforms (e.g., macOS/iOS) may ignore this request and keep a lower MTU.
     // That's fine — we also keep chunk sizes small and paced below.
     BLEDevice::setMTU(517);
     delay(BLE_INIT_STACK_DELAY_MS);
-    
+
     ble_server = BLEDevice::createServer();
     delay(BLE_INIT_SERVER_DELAY_MS);
     ble_server->setCallbacks(this);
-    
+
     // Create OTA service
     ota_service = ble_server->createService(BLE_OTA_SERVICE_UUID);
     delay(BLE_INIT_SERVICE_DELAY_MS);
@@ -160,7 +170,7 @@ void BluetoothManager::enable(unsigned long timeout_ms) {
     );
     build_number_characteristic->setValue(ota_handler.get_build_number().c_str());
     delay(BLE_INIT_CHARACTERISTIC_DELAY_MS);
-    
+
     // Create measurement data service
     data_service = ble_server->createService(BLE_DATA_SERVICE_UUID);
     delay(BLE_INIT_SERVICE_DELAY_MS);
@@ -183,7 +193,7 @@ void BluetoothManager::enable(unsigned long timeout_ms) {
         BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
     );
     delay(BLE_INIT_CHARACTERISTIC_DELAY_MS);
-    
+
     // Create debug service (Nordic UART)
     debug_service = ble_server->createService(BLE_DEBUG_SERVICE_UUID);
     delay(BLE_INIT_SERVICE_DELAY_MS);
@@ -265,9 +275,12 @@ void BluetoothManager::enable(unsigned long timeout_ms) {
     BLEAdvertisementData sr;
     sr.setName(BLE_DEVICE_NAME);
     advertising->setScanResponseData(sr);
-    
+
     delay(BLE_INIT_ADVERTISING_DELAY_MS);
-    
+
+    ble_stack_initialized = true;
+    } // !ble_stack_initialized
+
     ble_enabled = true;
     set_ota_status(BLE_OTA_READY);
     
@@ -290,46 +303,30 @@ void BluetoothManager::enable_during_bootup() {
 
 void BluetoothManager::disable() {
     if (!ble_enabled) return;
-    
+
     log("Bluetooth: Disabling BLE and restoring normal power...\n");
-    
+
     if (ota_handler.is_ota_active()) {
         ota_handler.abort_ota();
     }
-    
+
     if (data_export_in_progress) {
         stop_data_export();
     }
-    
-    stop_advertising();
-    delay(BLE_SHUTDOWN_ADVERTISING_DELAY_MS);
-    
-    log("Bluetooth: Deinitializing BLE stack...\n");
-    BLEDevice::deinit(false);
-    delay(BLE_SHUTDOWN_DEINIT_DELAY_MS);
-    
+
+    // Only stop advertising - the underlying BLE stack, server, services, and
+    // characteristics are left initialized (see ble_stack_initialized in
+    // enable()) since BLEDevice::deinit() does not fully release its internal
+    // heap, and repeated init/deinit cycles leak enough RAM to crash a later
+    // re-enable. Set flags before stopping so callbacks fired during teardown
+    // (e.g. onDisconnect) see BLE as already disabled.
     ble_enabled = false;
     device_connected = false;
-    ble_server = nullptr;
-    ota_service = nullptr;
-    data_service = nullptr;
-    debug_service = nullptr;
-    sysinfo_service = nullptr;
-    ota_data_characteristic = nullptr;
-    ota_control_characteristic = nullptr;
-    ota_status_characteristic = nullptr;
-    build_number_characteristic = nullptr;
-    data_control_characteristic = nullptr;
-    data_transfer_characteristic = nullptr;
-    data_status_characteristic = nullptr;
-    debug_rx_characteristic = nullptr;
-    debug_tx_characteristic = nullptr;
-    sysinfo_system_characteristic = nullptr;
-    sysinfo_performance_characteristic = nullptr;
-    sysinfo_hardware_characteristic = nullptr;
-    sysinfo_sessions_characteristic = nullptr;
+    stop_advertising();
+    delay(BLE_SHUTDOWN_ADVERTISING_DELAY_MS);
+
     debug_stream_active = false;
-    
+
     // Restore normal power settings
     ota_handler.restore_normal_power_mode();
     log("Bluetooth: Disable complete\n");
@@ -379,7 +376,11 @@ void BluetoothManager::start_advertising() {
 }
 
 void BluetoothManager::stop_advertising() {
-    if (ble_enabled) {
+    // Gate on the stack existing, not ble_enabled - disable() sets ble_enabled
+    // false before calling this (so a racing onDisconnect() won't resume
+    // advertising via start_advertising()'s own ble_enabled check), so this
+    // call must still go through even though ble_enabled is already false.
+    if (ble_stack_initialized) {
         BLEDevice::stopAdvertising();
     }
 }

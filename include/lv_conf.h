@@ -40,7 +40,7 @@
  * - LV_STDLIB_RTTHREAD:    RT-Thread implementation
  * - LV_STDLIB_CUSTOM:      Implement the functions externally
  */
-#define LV_USE_STDLIB_MALLOC    LV_STDLIB_CLIB
+#define LV_USE_STDLIB_MALLOC    LV_STDLIB_BUILTIN
 
 /** Possible values
  * - LV_STDLIB_BUILTIN:     LVGL's built in implementation
@@ -68,8 +68,18 @@
 #define LV_STDARG_INCLUDE       <stdarg.h>
 
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
-    /** Size of memory available for `lv_malloc()` in bytes (>= 2kB) */
-    #define LV_MEM_SIZE (96U * 1024U)          /**< [bytes] */
+    /** Size of memory available for `lv_malloc()` in bytes (>= 2kB)
+     *
+     * Backed by PSRAM (see lv_psram_pool_get() in src/ui/lv_psram_pool.c),
+     * not internal DRAM - every LVGL object across every screen used to be a
+     * plain malloc() competing with BLE/task stacks for the same ~300KB of
+     * internal RAM (LV_USE_STDLIB_MALLOC was LV_STDLIB_CLIB), which alone
+     * left the device down to ~400 bytes of internal heap after boot. Giving
+     * LVGL its own generous PSRAM-backed arena instead frees that internal
+     * RAM back for everything else, with plenty of headroom for future UI
+     * growth (8MB PSRAM is otherwise barely used).
+     */
+    #define LV_MEM_SIZE (512U * 1024U)          /**< [bytes] */
 
     /** Size of the memory expand for `lv_malloc()` in bytes */
     #define LV_MEM_POOL_EXPAND_SIZE 0
@@ -78,8 +88,8 @@
     #define LV_MEM_ADR 0     /**< 0: unused*/
     /* Instead of an address give a memory allocator that will be called to get a memory pool for LVGL. E.g. my_malloc */
     #if LV_MEM_ADR == 0
-        #undef LV_MEM_POOL_INCLUDE
-        #undef LV_MEM_POOL_ALLOC
+        #define LV_MEM_POOL_INCLUDE "lv_psram_pool.h"
+        #define LV_MEM_POOL_ALLOC lv_psram_pool_alloc
     #endif
 #endif  /*LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN*/
 

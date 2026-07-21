@@ -72,7 +72,6 @@
 // BLE SHUTDOWN TIMING
 //------------------------------------------------------------------------------
 #define BLE_SHUTDOWN_ADVERTISING_DELAY_MS 50                                   // Delay to allow advertising to stop cleanly
-#define BLE_SHUTDOWN_DEINIT_DELAY_MS 100                                       // Delay to allow BLE stack to deinitialize
 
 //------------------------------------------------------------------------------
 // BLE POWER MANAGEMENT

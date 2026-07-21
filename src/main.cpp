@@ -156,7 +156,7 @@ void setup() {
     // Enable BLE by default during bootup with 2-minute timeout
     // (Previously disabled by default for security, now enabled for user convenience)
     bluetooth_manager.enable_during_bootup();
-    
+
     // Initialize individual task modules BEFORE TaskManager creates FreeRTOS tasks
     // This ensures all task dependencies are ready before tasks start running
     LOG_BLE("[STARTUP] Initializing task module dependencies...\n");
@@ -190,16 +190,16 @@ void setup() {
     }
     
     LOG_BLE("✅ TaskManager initialized successfully\n");
-    
+
     // Initialize remaining task modules that depend on TaskManager queues
     file_io_task.init(task_manager.get_file_io_queue());
-    
+
     LOG_BLE("✅ All task modules initialized\n");
-    
+
     // Build the UI screens now. The UI render task created above is already
     // running in the background but has been safely no-oping until this point.
     ui_manager.init(&hardware_manager, &state_machine, &profile_controller, &grind_controller, &bluetooth_manager);
-    
+
     // Store OTA failure info in ui_manager if needed
     if (ota_failed) {
         if (auto* ota = ui_manager.get_ota_data_export_controller()) {

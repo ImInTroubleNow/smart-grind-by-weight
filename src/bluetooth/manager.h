@@ -86,6 +86,12 @@ private:
     // Connection state
     bool device_connected;
     bool ble_enabled;
+    // True once the BLE stack (BLEDevice::init, server, services, characteristics)
+    // has been built for this boot. Repeated BLEDevice::init()/deinit() cycles are
+    // known to leak internal heap that ESP-IDF's Bluedroid stack never reclaims, so
+    // the stack is only ever built once per boot - enable()/disable() after that
+    // just start/stop advertising rather than tearing anything down.
+    bool ble_stack_initialized;
     bool debug_stream_active;
     unsigned long enable_time;
     unsigned long timeout_ms;
