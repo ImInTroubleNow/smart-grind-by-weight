@@ -4,6 +4,7 @@
 #include "../../controllers/grind_mode_traits.h"
 #include "../../controllers/profile_controller.h"
 #include "../../controllers/profile_style.h"
+#include "../fonts/custom_icons.h"
 #include "../ui_helpers.h"
 
 // Water volume at a 1:16 coffee:water ratio for Drip Coffee tabs; CUSTOM (and
@@ -123,15 +124,23 @@ void ReadyScreen::sync_to_profile_style(ProfileController* profile_controller) {
             const char* volume_text = (style == ProfileStyle::DRIP) ? DRIP_VOLUME_TEXT[i] : "";
             bool has_volume = volume_text && volume_text[0] != '\0';
             lv_label_set_text(volume_labels[i], has_volume ? volume_text : "");
-            if (has_volume) lv_obj_clear_flag(volume_labels[i], LV_OBJ_FLAG_HIDDEN);
-            else lv_obj_add_flag(volume_labels[i], LV_OBJ_FLAG_HIDDEN);
+            if (has_volume) {
+                lv_obj_clear_flag(volume_labels[i], LV_OBJ_FLAG_HIDDEN);
+                if (water_dividers[i]) lv_obj_clear_flag(water_dividers[i], LV_OBJ_FLAG_HIDDEN);
+                if (water_rows[i]) lv_obj_clear_flag(water_rows[i], LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_add_flag(volume_labels[i], LV_OBJ_FLAG_HIDDEN);
+                if (water_dividers[i]) lv_obj_add_flag(water_dividers[i], LV_OBJ_FLAG_HIDDEN);
+                if (water_rows[i]) lv_obj_add_flag(water_rows[i], LV_OBJ_FLAG_HIDDEN);
+            }
         }
 
         if (weight_labels[i]) {
             char text[24];
-            format_ready_value(text, sizeof(text), mode, profile_controller->get_profile_weight(i));
+            format_ready_value(text, sizeof(text), mode, get_profile_target(*profile_controller, mode, i));
             lv_label_set_text(weight_labels[i], text);
         }
+        update_dose_labels(i, mode);
     }
 
     // Hidden tabs/dots change the tabview content's flex layout (hidden
@@ -153,24 +162,96 @@ void ReadyScreen::update_active_dot(int tab) {
     }
 }
 
+lv_obj_t* ReadyScreen::create_divider(lv_obj_t* parent) {
+    lv_obj_t* divider = lv_obj_create(parent);
+    lv_obj_set_size(divider, 60, 1);
+    lv_obj_set_style_bg_color(divider, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_bg_opa(divider, LV_OPA_40, 0);
+    lv_obj_set_style_border_width(divider, 0, 0);
+    lv_obj_set_style_margin_ver(divider, 4, 0);
+    lv_obj_clear_flag(divider, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(divider, LV_OBJ_FLAG_CLICKABLE);
+    return divider;
+}
+
+lv_obj_t* ReadyScreen::create_icon_caption_row(lv_obj_t* parent, const char* icon_char, const char* caption_text,
+                                              lv_obj_t** out_icon_label, lv_obj_t** out_caption_label) {
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row, 0, 0);
+    lv_obj_set_style_pad_all(row, 0, 0);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(row, 6, 0);
+
+    lv_obj_t* icon_label = lv_label_create(row);
+    lv_label_set_text(icon_label, icon_char);
+    lv_obj_set_style_text_font(icon_label, &lv_font_custom_icons_24, 0);
+    lv_obj_set_style_text_color(icon_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+
+    lv_obj_t* caption_label = lv_label_create(row);
+    lv_label_set_text(caption_label, caption_text);
+    lv_obj_set_style_text_font(caption_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(caption_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+
+    if (out_icon_label) *out_icon_label = icon_label;
+    if (out_caption_label) *out_caption_label = caption_label;
+    return row;
+}
+
+void ReadyScreen::update_dose_labels(int index, GrindMode mode) {
+    if (dose_icon_labels[index]) {
+        lv_label_set_text(dose_icon_labels[index], mode == GrindMode::TIME ? ICON_WATCH : ICON_BEAN);
+    }
+    if (dose_caption_labels[index]) {
+        lv_label_set_text(dose_caption_labels[index], mode == GrindMode::TIME ? "TIME" : "DOSE");
+    }
+}
+
 void ReadyScreen::create_profile_page(lv_obj_t* parent, int profile_index) {
     lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_gap(parent, 0, 0);
+    lv_obj_set_style_pad_gap(parent, 4, 0);
 
-    lv_obj_t* label_container = create_profile_label(parent, &name_labels[profile_index], &weight_labels[profile_index]);
+    // Title - the profile name (e.g. "8 CUPS"), styled as a screen title
+    // rather than the dimmer subtitle treatment used elsewhere.
+    name_labels[profile_index] = lv_label_create(parent);
+    lv_label_set_text(name_labels[profile_index], "");
+    lv_obj_set_style_text_font(name_labels[profile_index], &lv_font_montserrat_34, 0);
+    lv_obj_set_style_text_color(name_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
     lv_obj_add_flag(name_labels[profile_index], LV_OBJ_FLAG_CLICKABLE);
 
-    // Volume subtitle - smaller than the name, same color, placed between
-    // the name and the big weight value. Text/visibility filled in by
-    // sync_to_profile_style() (empty/hidden for styles or slots with no
-    // fixed volume, e.g. Espresso or CUSTOM).
-    volume_labels[profile_index] = lv_label_create(label_container);
-    lv_obj_set_style_text_font(volume_labels[profile_index], &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(volume_labels[profile_index], lv_color_hex(THEME_COLOR_SECONDARY), 0);
-    lv_obj_move_to_index(volume_labels[profile_index], 1);
+    // Water block (divider + icon/caption row + volume value) - hidden as a
+    // unit by sync_to_profile_style() for styles/slots with no fixed volume
+    // (Espresso, CUSTOM), leaving only the divider below directly under the
+    // title.
+    water_dividers[profile_index] = create_divider(parent);
+    water_rows[profile_index] = create_icon_caption_row(parent, ICON_DROPLET, "WATER", nullptr, nullptr);
 
+    volume_labels[profile_index] = lv_label_create(parent);
+    lv_label_set_text(volume_labels[profile_index], "");
+    lv_obj_set_style_text_font(volume_labels[profile_index], &lv_font_montserrat_28, 0);
+    lv_obj_set_style_text_color(volume_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+    lv_obj_set_style_margin_bottom(volume_labels[profile_index], 6, 0);
+
+    // Divider before the dose block - always shown, unlike the water divider
+    // above, so there's still a separator when the water block is hidden.
+    create_divider(parent);
+
+    // Dose block - icon/caption switch between bean/"DOSE" (Weight mode) and
+    // watch/"TIME" (Time mode) via update_dose_labels(), kept in sync with
+    // weight_labels' own mode-dependent text.
+    create_icon_caption_row(parent, ICON_BEAN, "DOSE", &dose_icon_labels[profile_index], &dose_caption_labels[profile_index]);
+
+    weight_labels[profile_index] = lv_label_create(parent);
+    lv_label_set_text(weight_labels[profile_index], "");
+    lv_obj_set_style_text_font(weight_labels[profile_index], &lv_font_montserrat_60, 0);
+    lv_obj_set_style_text_color(weight_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
     lv_obj_add_flag(weight_labels[profile_index], LV_OBJ_FLAG_CLICKABLE);
 }
 
@@ -211,6 +292,7 @@ void ReadyScreen::update_profile_values(const float values[], int count, GrindMo
             format_ready_value(text, sizeof(text), mode, values[i]);
             lv_label_set_text(weight_labels[i], text);
         }
+        update_dose_labels(i, mode);
     }
 }
 

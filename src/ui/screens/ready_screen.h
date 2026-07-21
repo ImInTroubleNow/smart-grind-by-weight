@@ -11,7 +11,11 @@ private:
     lv_obj_t* tabview;
     lv_obj_t* profile_tabs[USER_PROFILE_COUNT];   // capacity; all created at boot, unused slots hidden
     lv_obj_t* name_labels[USER_PROFILE_COUNT];
+    lv_obj_t* water_dividers[USER_PROFILE_COUNT];
+    lv_obj_t* water_rows[USER_PROFILE_COUNT];
     lv_obj_t* volume_labels[USER_PROFILE_COUNT];
+    lv_obj_t* dose_icon_labels[USER_PROFILE_COUNT];
+    lv_obj_t* dose_caption_labels[USER_PROFILE_COUNT];
     lv_obj_t* weight_labels[USER_PROFILE_COUNT];
     lv_obj_t* menu_tab;
     lv_obj_t* menu_icon_button;
@@ -39,4 +43,8 @@ public:
 private:
     void create_profile_page(lv_obj_t* parent, int profile_index);
     void create_menu_page(lv_obj_t* parent);
+    lv_obj_t* create_divider(lv_obj_t* parent);
+    lv_obj_t* create_icon_caption_row(lv_obj_t* parent, const char* icon_char, const char* caption_text,
+                                      lv_obj_t** out_icon_label, lv_obj_t** out_caption_label);
+    void update_dose_labels(int index, GrindMode mode);
 };

@@ -596,7 +596,7 @@
 #define LV_FONT_MONTSERRAT_28 1
 #define LV_FONT_MONTSERRAT_30 0
 #define LV_FONT_MONTSERRAT_32 1
-#define LV_FONT_MONTSERRAT_34 0
+#define LV_FONT_MONTSERRAT_34 1
 #define LV_FONT_MONTSERRAT_36 1
 #define LV_FONT_MONTSERRAT_38 0
 #define LV_FONT_MONTSERRAT_40 0
@@ -632,7 +632,8 @@
     /* LV_FONT_DECLARE(lv_font_montserrat_54) */ \
     LV_FONT_DECLARE(lv_font_montserrat_56) \
     /* LV_FONT_DECLARE(lv_font_montserrat_58) */ \
-    LV_FONT_DECLARE(lv_font_montserrat_60)
+    LV_FONT_DECLARE(lv_font_montserrat_60) \
+    LV_FONT_DECLARE(lv_font_custom_icons_24)
 
 /** Always set a default font */
 #define LV_FONT_DEFAULT &lv_font_montserrat_14
