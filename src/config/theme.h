@@ -15,6 +15,12 @@
 #define THEME_COLOR_ACCENT 0x00AAFF                                            // Accent color for highlights (blue)
 #define THEME_COLOR_SECONDARY 0xAAAAAA                                         // Secondary theme color (light gray)
 
+// Main menu section icon colors
+#define THEME_COLOR_MENU_GENERAL 0x00E5FF                                      // General group icon color (cyan)
+#define THEME_COLOR_MENU_CALIBRATION 0xFFB300                                  // Calibration group icon color (amber)
+#define THEME_COLOR_MENU_SETTINGS 0xA855F7                                     // Settings group icon color (purple)
+#define THEME_COLOR_MENU_SYSTEM 0x10B981                                       // System group icon color (emerald)
+
 // Text colors
 #define THEME_COLOR_TEXT_PRIMARY 0xFFFFFF                                      // Primary text color (white)
 #define THEME_COLOR_TEXT_SECONDARY 0xCCCCCC                                    // Secondary text color (light gray)

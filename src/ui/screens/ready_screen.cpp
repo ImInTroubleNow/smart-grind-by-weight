@@ -10,7 +10,7 @@
 // Water volume at a 1:16 coffee:water ratio for Drip Coffee tabs; CUSTOM (and
 // every Espresso tab) has no fixed volume.
 static const char* DRIP_VOLUME_TEXT[USER_PROFILE_COUNT] = {
-    "250mL", "500mL", "750mL", "1L", "1.25L", ""
+    "250mL", "500mL", "750mL", "1.0L", "1.25L", ""
 };
 
 void ReadyScreen::create(ProfileController* profile_controller) {

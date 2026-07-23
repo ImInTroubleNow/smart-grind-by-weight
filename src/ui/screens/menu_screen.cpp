@@ -9,6 +9,7 @@
 #include "../event_bridge_lvgl.h"
 #include "../../config/logging.h"
 #include "../components/blocking_overlay.h"
+#include "../fonts/custom_icons.h"
 
 static void back_event_handler(lv_event_t * e)
 {
@@ -150,19 +151,26 @@ void MenuScreen::create_menu_ui() {
     diagnostics_page = lv_menu_page_create(menu, "Monitor");
     create_diagnostics_page(diagnostics_page);
 
-    // Create menu items grouped with separators
-    create_separator(main_page, "Modes");
-    lv_obj_t* profile_mode_item = create_menu_item(main_page, "Profile Mode");
+    // Create menu items grouped under section headers, each group with its own icon color.
+    lv_color_t general_color = lv_color_hex(THEME_COLOR_MENU_GENERAL);
+    lv_color_t calibration_color = lv_color_hex(THEME_COLOR_MENU_CALIBRATION);
+    lv_color_t settings_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS);
+    lv_color_t system_color = lv_color_hex(THEME_COLOR_MENU_SYSTEM);
+
+    create_section_header(main_page, "GENERAL");
+
+    lv_obj_t* profile_mode_item = create_menu_item(main_page, "PROFILE MODE", ICON_PROFILE, general_color);
     lv_menu_set_load_page_event(menu, profile_mode_item, profile_mode_page);
 
-    lv_obj_t* grind_type_item = create_menu_item(main_page, "Grind Mode");
+    lv_obj_t* grind_type_item = create_menu_item(main_page, "GRIND MODE", ICON_GRIND_MODE, general_color);
     lv_menu_set_load_page_event(menu, grind_type_item, grind_type_page);
 
-    create_separator(main_page, "Tools");
-    scale_item = create_menu_item(main_page, "Scale");
-    cal_button = create_menu_item(main_page, "Calibrate");
-    autotune_button = create_menu_item(main_page, "Tune Pulses");
-    motor_test_button = create_menu_item(main_page, "Motor Test");
+    create_section_header(main_page, "CALIBRATION");
+
+    scale_item = create_menu_item(main_page, "SCALE", ICON_SCALE, calibration_color);
+    cal_button = create_menu_item(main_page, "CALIBRATE", ICON_CALIBRATE, calibration_color);
+    autotune_button = create_menu_item(main_page, "TUNE PULSES", ICON_TUNE_PULSE, calibration_color);
+    motor_test_button = create_menu_item(main_page, "MOTOR TEST", ICON_MOTOR, calibration_color);
 
     lv_menu_set_load_page_event(menu, scale_item, scale_page);
 
@@ -185,27 +193,29 @@ void MenuScreen::create_menu_ui() {
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::MENU_MOTOR_TEST)));
     }
 
-    create_separator(main_page, "Settings");
-    lv_obj_t* bluetooth_item = create_menu_item(main_page, "Bluetooth");
+    create_section_header(main_page, "SETTINGS");
+
+    lv_obj_t* bluetooth_item = create_menu_item(main_page, "BLUETOOTH", ICON_BLUETOOTH, settings_color);
     lv_menu_set_load_page_event(menu, bluetooth_item, bluetooth_page);
 
-    lv_obj_t* display_item = create_menu_item(main_page, "Display");
+    lv_obj_t* display_item = create_menu_item(main_page, "DISPLAY", ICON_DISPLAY, settings_color);
     lv_menu_set_load_page_event(menu, display_item, display_page);
 
-    lv_obj_t* grind_mode_item = create_menu_item(main_page, "Grind Settings");
+    lv_obj_t* grind_mode_item = create_menu_item(main_page, "GRIND SETTINGS", ICON_GRIND_SETTINGS, settings_color);
     lv_menu_set_load_page_event(menu, grind_mode_item, grind_mode_page);
 
-    create_separator(main_page, "Info");
-    lv_obj_t* diagnostics_item = create_menu_item(main_page, "Monitor");
+    create_section_header(main_page, "SYSTEM");
+
+    lv_obj_t* diagnostics_item = create_menu_item(main_page, "MONITOR", ICON_MONITOR, system_color);
     lv_menu_set_load_page_event(menu, diagnostics_item, diagnostics_page);
 
-    lv_obj_t* info_item = create_menu_item(main_page, "System Info");
+    lv_obj_t* info_item = create_menu_item(main_page, "SYSTEM INFO", ICON_INFO, system_color);
     lv_menu_set_load_page_event(menu, info_item, info_page);
 
-    lv_obj_t* data_item = create_menu_item(main_page, "Logs & Data");
+    lv_obj_t* data_item = create_menu_item(main_page, "LOGS & DATA", ICON_LOGS, system_color);
     lv_menu_set_load_page_event(menu, data_item, data_page);
 
-    lv_obj_t* stats_item = create_menu_item(main_page, "Lifetime Stats");
+    lv_obj_t* stats_item = create_menu_item(main_page, "LIFETIME STATS", ICON_STATS, system_color);
     lv_menu_set_load_page_event(menu, stats_item, stats_page);
 
     // Set main page as active (menu will be the landing page)
@@ -1025,6 +1035,24 @@ lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text) {
     return separator_container;
 }
 
+lv_obj_t* MenuScreen::create_section_header(lv_obj_t* parent, const char* text) {
+    lv_obj_t* container = lv_obj_create(parent);
+    lv_obj_set_size(container, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(container, 0, 0);
+    lv_obj_set_style_pad_hor(container, 10, 0);
+    lv_obj_set_style_pad_top(container, 20, 0);
+    lv_obj_set_style_pad_bottom(container, 4, 0);
+    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* label = lv_label_create(container);
+    lv_label_set_text(label, text);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(label, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+
+    return container;
+}
+
 void MenuScreen::update_bluetooth_startup_toggle() {
     if (!ble_startup_toggle) return;
 
@@ -1063,18 +1091,49 @@ void MenuScreen::update_logging_toggle() {
     }
 }
 
-lv_obj_t* MenuScreen::create_menu_item(lv_obj_t* parent, const char* text) {
+lv_obj_t* MenuScreen::create_menu_item(lv_obj_t* parent, const char* text, const char* icon_char, lv_color_t icon_color) {
     lv_obj_t* cont = lv_menu_cont_create(parent);
-    style_as_button(cont);
-    lv_obj_set_style_margin_bottom(cont, 10, 0);
+
+    // Flat list row: no card background/radius, just a bottom hairline divider
+    lv_obj_set_width(cont, LV_PCT(100));
+    lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(cont, 0, 0);
+    lv_obj_set_style_pad_hor(cont, 10, 0);
+    lv_obj_set_style_pad_ver(cont, 16, 0);
+    lv_obj_set_style_text_font(cont, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(cont, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+    lv_obj_set_style_border_width(cont, 1, 0);
+    lv_obj_set_style_border_side(cont, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_color(cont, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_border_opa(cont, LV_OPA_30, 0);
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
 
     // Set layout
     lv_obj_set_layout(cont, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_t* label = lv_label_create(cont);
+    // Icon + label grouped together on the left, chevron pinned right
+    lv_obj_t* left_group = lv_obj_create(cont);
+    lv_obj_set_size(left_group, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(left_group, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(left_group, 0, 0);
+    lv_obj_set_style_pad_all(left_group, 0, 0);
+    lv_obj_clear_flag(left_group, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(left_group, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(left_group, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(left_group, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(left_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(left_group, 14, 0);
+
+    lv_obj_t* icon_label = lv_label_create(left_group);
+    lv_label_set_text(icon_label, icon_char);
+    lv_obj_set_style_text_font(icon_label, &lv_font_custom_icons_24, 0);
+    lv_obj_set_style_text_color(icon_label, icon_color, 0);
+
+    lv_obj_t* label = lv_label_create(left_group);
     lv_label_set_text(label, text);
+    lv_obj_set_style_text_color(label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
 
     lv_obj_t* chevron = lv_label_create(cont);
     lv_label_set_text(chevron, LV_SYMBOL_RIGHT);
