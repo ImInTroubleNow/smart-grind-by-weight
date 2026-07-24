@@ -471,10 +471,10 @@ void MenuUIController::handle_auto_return_toggle() {
 void MenuUIController::handle_grinder_purge_mode_radio_button() {
     if (!ui_manager_) return;
 
-    auto* radio_group = ui_manager_->menu_screen.get_grinder_purge_mode_radio_group();
-    if (!radio_group) return;
+    auto* segmented_control = ui_manager_->menu_screen.get_grinder_purge_mode_radio_group();
+    if (!segmented_control) return;
 
-    int selected_index = radio_button_group_get_selection(radio_group);
+    int selected_index = segmented_control_get_selection(segmented_control);
 
     auto* hardware = ui_manager_->get_hardware_manager();
     Preferences* prefs = hardware ? hardware->get_preferences() : nullptr;

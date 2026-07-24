@@ -50,6 +50,7 @@ private:
     // Menu toggle elements
     lv_obj_t* ble_toggle;
     lv_obj_t* ble_startup_toggle;
+    lv_obj_t* ble_status_section;
     lv_obj_t* ble_status_label;
     lv_obj_t* ble_timer_label;
     lv_obj_t* logging_toggle;
@@ -74,7 +75,9 @@ private:
     lv_obj_t* grind_mode_swipe_toggle;
     lv_obj_t* grind_mode_swipe_row;
     lv_obj_t* auto_start_toggle;
+    lv_obj_t* auto_start_state_label;
     lv_obj_t* auto_return_toggle;
+    lv_obj_t* auto_return_state_label;
     lv_obj_t* grinder_purge_mode_radio_group;
     lv_obj_t* grinder_purge_amount_slider;
     lv_obj_t* grinder_purge_amount_label;
@@ -175,13 +178,14 @@ private:
     lv_obj_t* create_section_header(lv_obj_t* parent, const char* text);
     lv_obj_t* create_menu_item(lv_obj_t* parent, const char* text, const char* icon_char, lv_color_t icon_color);
     lv_obj_t *create_toggle_row(lv_obj_t *parent, const char *text,lv_obj_t **out_toggle);
-    lv_obj_t *create_slider_row(lv_obj_t *parent, const char *text,
-                                lv_obj_t **label, lv_obj_t **slider,
-                                lv_color_t slider_color = lv_color_hex(THEME_COLOR_ACCENT),
-                                uint32_t min = 0, uint32_t max = 100);
+    lv_obj_t *create_flat_toggle_row(lv_obj_t *parent, const char *name, lv_obj_t **out_toggle, bool with_divider = true);
+    lv_obj_t *create_flat_toggle_desc_row(lv_obj_t *parent, const char *name, const char *description,
+                                          lv_obj_t **out_toggle, lv_obj_t **out_state_label);
     lv_obj_t *create_display_slider_row(lv_obj_t *parent, const char *name,
                                         lv_obj_t **value_label, lv_obj_t **slider,
-                                        uint32_t min = 0, uint32_t max = 100);
+                                        uint32_t min = 0, uint32_t max = 100,
+                                        const char *description = nullptr,
+                                        const lv_font_t *name_font = &lv_font_montserrat_24);
     lv_obj_t *create_static_data_label(lv_obj_t *parent, const char *name,
                                        const char *value);
     lv_obj_t *create_data_label(lv_obj_t *parent, const char *name,

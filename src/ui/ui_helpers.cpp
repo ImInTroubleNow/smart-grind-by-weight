@@ -149,28 +149,38 @@ lv_obj_t* create_data_label(lv_obj_t* parent, const char* name, lv_obj_t** value
     return container;
 }
 
-// Radio button group data structure
-struct RadioButtonGroupData {
+// Segmented control data structure
+struct SegmentedControlData {
     lv_obj_t** buttons;
-    uint32_t* selected_colors;
+    lv_obj_t** labels;
     int button_count;
     int selected_index;
-    radio_button_callback_t callback;
+    uint32_t selected_color;
+    segmented_control_callback_t callback;
     void* user_data;
 };
 
-// Internal event handler for radio button clicks
-static void radio_button_event_handler(lv_event_t* e) {
+static void segmented_control_apply_visuals(SegmentedControlData* data) {
+    for (int i = 0; i < data->button_count; i++) {
+        if (!data->buttons[i] || !lv_obj_is_valid(data->buttons[i])) continue;
+        bool selected = (i == data->selected_index);
+        lv_obj_set_style_bg_opa(data->buttons[i], selected ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+        lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(data->selected_color), 0);
+        lv_obj_set_style_text_color(data->labels[i],
+                                   selected ? lv_color_hex(THEME_COLOR_TEXT_PRIMARY) : lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    }
+}
+
+static void segmented_control_event_handler(lv_event_t* e) {
     lv_obj_t* clicked_button = (lv_obj_t*)lv_event_get_target(e);
     if (!clicked_button || !lv_obj_is_valid(clicked_button)) return;
 
-    lv_obj_t* group = lv_obj_get_parent(clicked_button);
-    if (!group || !lv_obj_is_valid(group)) return;
+    lv_obj_t* control = lv_obj_get_parent(clicked_button);
+    if (!control || !lv_obj_is_valid(control)) return;
 
-    RadioButtonGroupData* data = (RadioButtonGroupData*)lv_obj_get_user_data(group);
+    SegmentedControlData* data = (SegmentedControlData*)lv_obj_get_user_data(control);
     if (!data || !data->buttons) return;
 
-    // Find which button was clicked
     int clicked_index = -1;
     for (int i = 0; i < data->button_count; i++) {
         if (data->buttons[i] == clicked_button) {
@@ -181,151 +191,109 @@ static void radio_button_event_handler(lv_event_t* e) {
 
     if (clicked_index == -1 || clicked_index == data->selected_index) return;
 
-    // Update selection
     data->selected_index = clicked_index;
+    segmented_control_apply_visuals(data);
 
-    // Update visual states
-    for (int i = 0; i < data->button_count; i++) {
-        if (data->buttons[i] && lv_obj_is_valid(data->buttons[i])) {
-            if (i == clicked_index) {
-                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(data->selected_colors[i]), 0);
-            } else {
-                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(THEME_COLOR_NEUTRAL), 0);
-            }
-        }
-    }
-
-    // Call user callback
     if (data->callback) {
         data->callback(clicked_index, data->user_data);
     }
 }
 
-// Event handler to free memory on object deletion
-static void radio_button_group_delete_handler(lv_event_t* e) {
-    lv_obj_t* group = (lv_obj_t*)lv_event_get_target(e);
-    if (!group) {
-        Serial.println("[RADIO_BTN] Delete handler called with null group");
-        return;
-    }
+static void segmented_control_delete_handler(lv_event_t* e) {
+    lv_obj_t* control = (lv_obj_t*)lv_event_get_target(e);
+    if (!control) return;
 
-    RadioButtonGroupData* data = (RadioButtonGroupData*)lv_obj_get_user_data(group);
-    // Check if already freed (user_data is nullptr)
-    if (!data) {
-        Serial.println("[RADIO_BTN] Delete handler called but data already freed");
-        return;
-    }
+    SegmentedControlData* data = (SegmentedControlData*)lv_obj_get_user_data(control);
+    if (!data) return;
 
-    Serial.printf("[%lums RADIO_BTN] Freeing radio button group data\n", millis());
+    lv_obj_set_user_data(control, nullptr);
 
-    // Clear user data first to prevent double-free if this handler is called again
-    lv_obj_set_user_data(group, nullptr);
-
-    // Now safe to free
     if (data->buttons) {
         free(data->buttons);
         data->buttons = nullptr;
     }
-    if (data->selected_colors) {
-        free(data->selected_colors);
-        data->selected_colors = nullptr;
+    if (data->labels) {
+        free(data->labels);
+        data->labels = nullptr;
     }
     free(data);
-
-    Serial.printf("[%lums RADIO_BTN] Radio button group freed successfully\n", millis());
 }
 
-lv_obj_t* create_radio_button_group(
+lv_obj_t* create_segmented_control(
     lv_obj_t* parent,
     const char* options[],
     int option_count,
-    lv_flex_flow_t layout,
     int initial_selection,
-    int32_t button_width,
-    int32_t button_height,
-    radio_button_callback_t callback,
-    void* user_data,
-    const uint32_t* selected_colors) {
+    lv_color_t selected_color,
+    segmented_control_callback_t callback,
+    void* user_data) {
 
-    // Create container
-    lv_obj_t* group_container = lv_obj_create(parent);
-    lv_obj_set_style_bg_opa(group_container, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(group_container, 0, 0);
-    lv_obj_set_style_pad_all(group_container, 0, 0);
-    lv_obj_set_style_margin_all(group_container, 0, 0);
-    lv_obj_set_style_margin_bottom(group_container, 10, 0);
-    
-    // Set layout
-    lv_obj_set_layout(group_container, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(group_container, layout);
-    
-    if (layout == LV_FLEX_FLOW_ROW) {
-        lv_obj_set_flex_align(group_container, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        lv_obj_set_style_pad_column(group_container, 10, 0);
-        lv_obj_set_size(group_container, 280, LV_SIZE_CONTENT);
-    } else {
-        lv_obj_set_flex_align(group_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        lv_obj_set_style_pad_row(group_container, 10, 0);
-        lv_obj_set_size(group_container, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    }
-    
-    // Allocate data structure
-    RadioButtonGroupData* data = (RadioButtonGroupData*)malloc(sizeof(RadioButtonGroupData));
+    lv_obj_t* control = lv_obj_create(parent);
+    lv_obj_set_size(control, LV_PCT(100), 52);
+    lv_obj_set_style_bg_opa(control, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(control, 16, 0);
+    lv_obj_set_style_border_width(control, 2, 0);
+    lv_obj_set_style_border_color(control, selected_color, 0);
+    lv_obj_set_style_pad_all(control, 0, 0);
+    lv_obj_set_style_margin_bottom(control, 10, 0);
+    lv_obj_set_style_clip_corner(control, true, 0);
+    lv_obj_clear_flag(control, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_set_layout(control, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(control, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(control, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(control, 0, 0);
+
+    SegmentedControlData* data = (SegmentedControlData*)malloc(sizeof(SegmentedControlData));
     data->buttons = (lv_obj_t**)malloc(sizeof(lv_obj_t*) * option_count);
-    data->selected_colors = (uint32_t*)malloc(sizeof(uint32_t) * option_count);
-    for (int i = 0; i < option_count; i++) {
-        data->selected_colors[i] = selected_colors ? selected_colors[i] : THEME_COLOR_PRIMARY;
-    }
+    data->labels = (lv_obj_t**)malloc(sizeof(lv_obj_t*) * option_count);
     data->button_count = option_count;
     data->selected_index = initial_selection;
+    data->selected_color = lv_color_to_u32(selected_color);
     data->callback = callback;
     data->user_data = user_data;
 
-    // Calculate button width if auto
-    int32_t actual_button_width = button_width;
-    if (layout == LV_FLEX_FLOW_ROW && button_width == -1) {
-        actual_button_width = (280 - (option_count - 1) * 10) / option_count;
-    }
-
-    // Create buttons
     for (int i = 0; i < option_count; i++) {
-        lv_color_t color = (i == initial_selection) ? lv_color_hex(data->selected_colors[i]) : lv_color_hex(THEME_COLOR_NEUTRAL);
-        data->buttons[i] = create_button(group_container, options[i], color, actual_button_width, button_height, &lv_font_montserrat_24);
-        
-        // Add event handler
-        lv_obj_add_event_cb(data->buttons[i], radio_button_event_handler, LV_EVENT_CLICKED, nullptr);
-    }
-    
-    // Store data in container
-    lv_obj_set_user_data(group_container, data);
+        lv_obj_t* segment = lv_obj_create(control);
+        lv_obj_set_size(segment, LV_SIZE_CONTENT, LV_PCT(100));
+        lv_obj_set_flex_grow(segment, 1);
+        lv_obj_set_style_radius(segment, 0, 0);
+        lv_obj_set_style_border_width(segment, 0, 0);
+        lv_obj_set_style_bg_opa(segment, LV_OPA_TRANSP, 0);
+        lv_obj_set_style_pad_all(segment, 0, 0);
+        lv_obj_clear_flag(segment, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_add_flag(segment, LV_OBJ_FLAG_CLICKABLE);
 
-    // Add cleanup handler
-    lv_obj_add_event_cb(group_container, radio_button_group_delete_handler, LV_EVENT_DELETE, nullptr);
-    
-    return group_container;
+        lv_obj_t* label = lv_label_create(segment);
+        lv_label_set_text(label, options[i]);
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_24, 0);
+        lv_obj_center(label);
+
+        data->buttons[i] = segment;
+        data->labels[i] = label;
+
+        lv_obj_add_event_cb(segment, segmented_control_event_handler, LV_EVENT_CLICKED, nullptr);
+    }
+
+    segmented_control_apply_visuals(data);
+
+    lv_obj_set_user_data(control, data);
+    lv_obj_add_event_cb(control, segmented_control_delete_handler, LV_EVENT_DELETE, nullptr);
+
+    return control;
 }
 
-void radio_button_group_set_selection(lv_obj_t* group, int selected_index) {
-    if (!group) return;
-    RadioButtonGroupData* data = (RadioButtonGroupData*)lv_obj_get_user_data(group);
+void segmented_control_set_selection(lv_obj_t* control, int selected_index) {
+    if (!control) return;
+    SegmentedControlData* data = (SegmentedControlData*)lv_obj_get_user_data(control);
     if (!data || !data->buttons || selected_index < 0 || selected_index >= data->button_count) return;
 
     data->selected_index = selected_index;
-
-    // Update visual states
-    for (int i = 0; i < data->button_count; i++) {
-        if (data->buttons[i] && lv_obj_is_valid(data->buttons[i])) {
-            if (i == selected_index) {
-                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(data->selected_colors[i]), 0);
-            } else {
-                lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(THEME_COLOR_NEUTRAL), 0);
-            }
-        }
-    }
+    segmented_control_apply_visuals(data);
 }
 
-int radio_button_group_get_selection(lv_obj_t* group) {
-    if (!group) return -1;
-    RadioButtonGroupData* data = (RadioButtonGroupData*)lv_obj_get_user_data(group);
+int segmented_control_get_selection(lv_obj_t* control) {
+    if (!control) return -1;
+    SegmentedControlData* data = (SegmentedControlData*)lv_obj_get_user_data(control);
     return (data && data->buttons) ? data->selected_index : -1;
 }

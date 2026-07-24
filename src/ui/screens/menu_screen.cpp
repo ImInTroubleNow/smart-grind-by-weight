@@ -330,22 +330,50 @@ void MenuScreen::create_bluetooth_page(lv_obj_t* parent) {
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
-    create_toggle_row(parent, "Enabled", &ble_toggle);
-    create_toggle_row(parent, "Startup", &ble_startup_toggle);
+    create_description_label(parent, "Configure Bluetooth connectivity and behavior.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
 
-    // BLE Status label
-    ble_status_label = lv_label_create(parent);
-    lv_label_set_text(ble_status_label, "Bluetooth: Disabled");
-    lv_obj_set_style_text_font(ble_status_label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(ble_status_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    create_flat_toggle_row(parent, "ENABLE", &ble_toggle, false);
+
+    // Advertising status, nested under Enable since it only applies while BLE is on.
+    // Carries the hairline divider itself so the whole block sits above one line.
+    ble_status_section = lv_obj_create(parent);
+    lv_obj_set_size(ble_status_section, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(ble_status_section, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(ble_status_section, 0, 0);
+    lv_obj_set_style_border_width(ble_status_section, 1, 0);
+    lv_obj_set_style_border_side(ble_status_section, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_color(ble_status_section, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_border_opa(ble_status_section, LV_OPA_30, 0);
+    lv_obj_set_style_pad_hor(ble_status_section, 10, 0);
+    lv_obj_set_style_pad_top(ble_status_section, 4, 0);
+    lv_obj_set_style_pad_bottom(ble_status_section, 18, 0);
+    lv_obj_set_style_pad_gap(ble_status_section, 2, 0);
+    lv_obj_set_layout(ble_status_section, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(ble_status_section, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(ble_status_section, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_clear_flag(ble_status_section, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* status_name_label = lv_label_create(ble_status_section);
+    lv_label_set_text(status_name_label, "ADVERTISING STATUS");
+    lv_obj_set_style_text_font(status_name_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(status_name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    // BLE Status label - stacked under the name, not beside it, so it can't collide
+    ble_status_label = lv_label_create(ble_status_section);
+    lv_label_set_text(ble_status_label, "Advertising");
+    lv_obj_set_style_text_font(ble_status_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(ble_status_label, lv_color_hex(THEME_COLOR_MENU_SETTINGS), 0);
     lv_obj_clear_flag(ble_status_label, LV_OBJ_FLAG_SCROLLABLE);
 
     // BLE Timer label
-    ble_timer_label = lv_label_create(parent);
+    ble_timer_label = lv_label_create(ble_status_section);
     lv_label_set_text(ble_timer_label, "");
-    lv_obj_set_style_text_font(ble_timer_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(ble_timer_label, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(ble_timer_label, lv_color_hex(THEME_COLOR_WARNING), 0);
     lv_obj_clear_flag(ble_timer_label, LV_OBJ_FLAG_SCROLLABLE);
+
+    create_flat_toggle_row(parent, "STARTUP", &ble_startup_toggle);
 
     // Register events for the toggles (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -413,43 +441,52 @@ void MenuScreen::create_grind_mode_page(lv_obj_t* parent) {
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
+    create_description_label(parent, "Configure automatic grinding and purge behavior.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
+
     // Automatic actions section
-    create_separator(parent, "Automation");
-    create_description_label(parent, "Start the selected profile as soon as the cup lands on the scale.");
-    create_toggle_row(parent, "Start", &auto_start_toggle);
-    create_description_label(parent, "Exit the completion screen once that cup weight drops away.");
-    create_toggle_row(parent, "Return", &auto_return_toggle);
+    create_description_label(parent, "AUTOMATION", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_flat_toggle_desc_row(parent, "Auto Start", "Start grinding when a cup is detected.",
+                               &auto_start_toggle, &auto_start_state_label);
+    create_flat_toggle_desc_row(parent, "Auto Exit", "Close completion screen when the cup is removed.",
+                               &auto_return_toggle, &auto_return_state_label);
 
     // Grinder Purging section
-    create_separator(parent, "Purging");
-    create_description_label(parent, "Decide what to do with the ground coffee after the grinder is primed.");
+    create_description_label(parent, "PURGING", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_description_label(parent, "Choose what happens after priming.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
 
-    // Radio button group for grinder purge mode (Keep/Remove)
-    const char* grinder_purge_modes[] = {"Keep", "Remove"};
-    grinder_purge_mode_radio_group = create_radio_button_group(
-        parent,
+    // Segmented control for grinder purge mode (Keep/Remove), inset 10px from each edge
+    // so it doesn't run edge-to-edge like the full-width rows above and below it.
+    lv_obj_t* segmented_wrapper = lv_obj_create(parent);
+    lv_obj_set_size(segmented_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(segmented_wrapper, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(segmented_wrapper, 0, 0);
+    lv_obj_set_style_pad_hor(segmented_wrapper, 10, 0);
+    lv_obj_set_style_pad_ver(segmented_wrapper, 0, 0);
+    lv_obj_clear_flag(segmented_wrapper, LV_OBJ_FLAG_SCROLLABLE);
+
+    const char* grinder_purge_modes[] = {"KEEP", "REMOVE"};
+    grinder_purge_mode_radio_group = create_segmented_control(
+        segmented_wrapper,
         grinder_purge_modes,
         2,
-        LV_FLEX_FLOW_ROW,
         1,  // Purge initially selected (index 1)
-        135, 100,  // Width, Height
+        lv_color_hex(THEME_COLOR_MENU_SETTINGS),
         grinder_purge_mode_callback,
         this
     );
 
-    create_description_label(parent, "Purge amount is a minimum target, not an exact goal.");
-
     // Slider for grinder purge amount (uses kPurgeSliderScale for resolution)
     const uint32_t slider_min_units = static_cast<uint32_t>(GRIND_PURGE_AMOUNT_MIN_G * kPurgeSliderScale + 0.5f);
     const uint32_t slider_max_units = static_cast<uint32_t>(GRIND_PURGE_AMOUNT_MAX_G * kPurgeSliderScale + 0.5f);
-    create_slider_row(parent, "Amount", &grinder_purge_amount_label, &grinder_purge_amount_slider,
-                     lv_color_hex(THEME_COLOR_ACCENT), slider_min_units, slider_max_units);
-
-    create_description_label(parent, "Set how long grounds stay fresh before showing purge prompt.");
+    create_display_slider_row(parent, "Purge Amount", &grinder_purge_amount_label, &grinder_purge_amount_slider,
+                             slider_min_units, slider_max_units, "Minimum target only.", &lv_font_montserrat_20);
 
     // Slider for grind freshness hours (discrete steps: 0.5, 1, 2, 3, 4, 8, 12, 24, 48)
-    create_slider_row(parent, "Freshness", &grind_freshness_hours_label, &grind_freshness_hours_slider,
-                     lv_color_hex(THEME_COLOR_ACCENT), 0, 8);  // 9 positions (0-8)
+    create_display_slider_row(parent, "Freshness", &grind_freshness_hours_label, &grind_freshness_hours_slider,
+                             0, 8, "Time before a purge reminder.", &lv_font_montserrat_20);  // 9 positions (0-8)
 
     // Register events for the toggles (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -896,8 +933,8 @@ void MenuScreen::update_ble_status() {
         } else {
             lv_label_set_text(ble_status_label, "Advertising");
         }
-        lv_obj_clear_flag(ble_status_label, LV_OBJ_FLAG_HIDDEN);
-        
+        lv_obj_clear_flag(ble_status_section, LV_OBJ_FLAG_HIDDEN);
+
         // Show remaining time
         unsigned long remaining_ms = bluetooth_manager->get_bluetooth_timeout_remaining_ms();
         unsigned long remaining_min = remaining_ms / (60 * 1000);
@@ -906,9 +943,8 @@ void MenuScreen::update_ble_status() {
         lv_label_set_text(ble_timer_label, timer_text);
         lv_obj_clear_flag(ble_timer_label, LV_OBJ_FLAG_HIDDEN);
     } else {
-        // When nothing to display hide the status labels
-        lv_obj_add_flag(ble_status_label, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(ble_timer_label, LV_OBJ_FLAG_HIDDEN);
+        // Nothing to show while BLE is off - hide the whole section
+        lv_obj_add_flag(ble_status_section, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
@@ -1062,7 +1098,7 @@ void MenuScreen::update_grinder_purge_amount_label(float amount_g) {
         float clamped_amount = amount_g;
         if (clamped_amount < GRIND_PURGE_AMOUNT_MIN_G) clamped_amount = GRIND_PURGE_AMOUNT_MIN_G;
         if (clamped_amount > GRIND_PURGE_AMOUNT_MAX_G) clamped_amount = GRIND_PURGE_AMOUNT_MAX_G;
-        snprintf(buffer, sizeof(buffer), "Amount: %.1fg", clamped_amount);
+        snprintf(buffer, sizeof(buffer), "%.1f g", clamped_amount);
         lv_label_set_text(grinder_purge_amount_label, buffer);
     }
 }
@@ -1071,9 +1107,9 @@ void MenuScreen::update_grind_freshness_hours_label(float hours) {
     if (grind_freshness_hours_label) {
         char buffer[24];
         if (hours < 1.0f) {
-            snprintf(buffer, sizeof(buffer), "Freshness: %.1fh", hours);
+            snprintf(buffer, sizeof(buffer), "%.1f h", hours);
         } else {
-            snprintf(buffer, sizeof(buffer), "Freshness: %.0fh", hours);
+            snprintf(buffer, sizeof(buffer), "%.0f h", hours);
         }
         lv_label_set_text(grind_freshness_hours_label, buffer);
     }
@@ -1257,35 +1293,10 @@ lv_obj_t* MenuScreen::create_toggle_row(lv_obj_t* parent, const char* text, lv_o
     return row_container;
 }
 
-
-lv_obj_t* MenuScreen::create_slider_row(lv_obj_t* parent, const char* text, lv_obj_t** label, lv_obj_t** slider, lv_color_t slider_color, uint32_t min, uint32_t max) {
-    lv_obj_t* row_container = lv_obj_create(parent);
-    style_as_button(row_container, 260, LV_SIZE_CONTENT);
-    lv_obj_set_style_margin_bottom(row_container, 10, 0);
-    // Set layout
-
-    lv_obj_set_layout(row_container, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(row_container, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(row_container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_gap(row_container, 14, 0);
-    lv_obj_set_style_pad_all(row_container, 20, 0);
-
-    *label = lv_label_create(row_container);
-    lv_label_set_text(*label, text);
-
-    *slider = lv_slider_create(row_container);
-    lv_obj_set_size(*slider, 220, 40);
-    lv_obj_set_ext_click_area(*slider, 20);
-    lv_slider_set_range(*slider, min, max);
-    lv_obj_set_style_bg_color(*slider, lv_color_hex(THEME_COLOR_BACKGROUND), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(*slider, slider_color, LV_PART_INDICATOR);
-    lv_obj_set_style_bg_opa(*slider, LV_OPA_TRANSP, LV_PART_KNOB);
-    return row_container;
-}
-
 lv_obj_t* MenuScreen::create_display_slider_row(lv_obj_t* parent, const char* name,
                                                  lv_obj_t** value_label, lv_obj_t** slider,
-                                                 uint32_t min, uint32_t max) {
+                                                 uint32_t min, uint32_t max,
+                                                 const char* description, const lv_font_t* name_font) {
     // Flat row: name + value on one line, full-width slider below, bottom hairline divider
     lv_obj_t* row = lv_obj_create(parent);
     lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
@@ -1317,7 +1328,7 @@ lv_obj_t* MenuScreen::create_display_slider_row(lv_obj_t* parent, const char* na
 
     lv_obj_t* name_label = lv_label_create(header);
     lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(name_label, name_font, 0);
     lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
 
     *value_label = lv_label_create(header);
@@ -1337,6 +1348,147 @@ lv_obj_t* MenuScreen::create_display_slider_row(lv_obj_t* parent, const char* na
     lv_obj_set_style_bg_color(*slider, lv_color_hex(THEME_COLOR_MENU_SETTINGS), LV_PART_KNOB);
     lv_obj_set_style_bg_opa(*slider, LV_OPA_COVER, LV_PART_KNOB);
     lv_obj_set_style_pad_all(*slider, 8, LV_PART_KNOB);
+
+    if (description) {
+        lv_obj_t* desc_label = lv_label_create(row);
+        lv_label_set_text(desc_label, description);
+        lv_obj_set_style_text_font(desc_label, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_text_color(desc_label, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+        lv_label_set_long_mode(desc_label, LV_LABEL_LONG_WRAP);
+        lv_obj_set_width(desc_label, LV_PCT(100));
+    }
+
+    return row;
+}
+
+lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name, lv_obj_t** out_toggle, bool with_divider) {
+    // Flat row: caps name on the left, small purple-accent switch on the right,
+    // bottom hairline divider - matches the Display page's flat row style.
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(row, 0, 0);
+    lv_obj_set_style_border_width(row, with_divider ? 1 : 0, 0);
+    lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_color(row, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_border_opa(row, LV_OPA_30, 0);
+    lv_obj_set_style_pad_hor(row, 10, 0);
+    lv_obj_set_style_pad_top(row, 14, 0);
+    lv_obj_set_style_pad_bottom(row, 18, 0);
+    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* name_label = lv_label_create(row);
+    lv_label_set_text(name_label, name);
+    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    *out_toggle = lv_switch_create(row);
+    lv_obj_set_size(*out_toggle, 50, 26);
+    lv_obj_set_ext_click_area(*out_toggle, 20);
+    lv_obj_set_style_bg_color(*out_toggle, lv_color_hex(THEME_COLOR_MENU_SETTINGS),
+                             LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    return row;
+}
+
+// Updates a toggle's ON/OFF caption label. Shared by the value-changed callback below
+// (for live edits) and update_grind_mode_toggles() (for the initial load-from-prefs sync,
+// which sets switch state directly and so never fires LV_EVENT_VALUE_CHANGED).
+static void set_toggle_state_caption(lv_obj_t* state_label, bool checked) {
+    if (!state_label) return;
+    lv_label_set_text(state_label, checked ? "ON" : "OFF");
+    lv_obj_set_style_text_color(state_label,
+                               checked ? lv_color_hex(THEME_COLOR_MENU_SETTINGS) : lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+}
+
+static void toggle_state_caption_event_cb(lv_event_t* e) {
+    lv_obj_t* toggle = (lv_obj_t*)lv_event_get_target(e);
+    lv_obj_t* state_label = (lv_obj_t*)lv_event_get_user_data(e);
+    set_toggle_state_caption(state_label, lv_obj_has_state(toggle, LV_STATE_CHECKED));
+}
+
+lv_obj_t* MenuScreen::create_flat_toggle_desc_row(lv_obj_t* parent, const char* name, const char* description,
+                                                   lv_obj_t** out_toggle, lv_obj_t** out_state_label) {
+    // Flat row: title + wrapped description on the left, switch + ON/OFF caption on the right,
+    // bottom hairline divider - matches the Display/Bluetooth pages' flat row style.
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(row, 0, 0);
+    lv_obj_set_style_border_width(row, 1, 0);
+    lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_color(row, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_border_opa(row, LV_OPA_30, 0);
+    lv_obj_set_style_pad_hor(row, 10, 0);
+    lv_obj_set_style_pad_top(row, 14, 0);
+    lv_obj_set_style_pad_bottom(row, 18, 0);
+    lv_obj_set_style_pad_gap(row, 14, 0);
+    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+
+    // Left column: title + wrapped description, grows to fill the row
+    lv_obj_t* text_col = lv_obj_create(row);
+    lv_obj_set_width(text_col, 0);
+    lv_obj_set_height(text_col, LV_SIZE_CONTENT);
+    lv_obj_set_flex_grow(text_col, 1);
+    lv_obj_set_style_bg_opa(text_col, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(text_col, 0, 0);
+    lv_obj_set_style_pad_all(text_col, 0, 0);
+    lv_obj_clear_flag(text_col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(text_col, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(text_col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(text_col, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_gap(text_col, 4, 0);
+
+    lv_obj_t* name_label = lv_label_create(text_col);
+    lv_label_set_text(name_label, name);
+    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    lv_obj_t* desc_label = lv_label_create(text_col);
+    lv_label_set_text(desc_label, description);
+    lv_obj_set_style_text_font(desc_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(desc_label, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+    lv_label_set_long_mode(desc_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(desc_label, LV_PCT(100));
+
+    // Right column: switch + ON/OFF caption, sized to content so it never gets squeezed.
+    // Right margin nudges it in from the row's edge (a bare switch flush against the edge
+    // reads as clipped). ext_click_area is set on BOTH the switch and this wrapping column:
+    // LVGL's touch hit-test recurses into a child only if the point already falls inside that
+    // child's own (extended) area, so a click landing outside toggle_col's tight content-sized
+    // box would never even reach the switch's own ext_click_area check - the column needs the
+    // same generous margin as the switch, not just the switch itself.
+    constexpr int32_t kToggleClickExtension = 35;
+    lv_obj_t* toggle_col = lv_obj_create(row);
+    lv_obj_set_size(toggle_col, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(toggle_col, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(toggle_col, 0, 0);
+    lv_obj_set_style_pad_all(toggle_col, 0, 0);
+    lv_obj_set_style_margin_right(toggle_col, 14, 0);
+    lv_obj_set_ext_click_area(toggle_col, kToggleClickExtension);
+    lv_obj_clear_flag(toggle_col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(toggle_col, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(toggle_col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(toggle_col, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(toggle_col, 4, 0);
+
+    *out_toggle = lv_switch_create(toggle_col);
+    lv_obj_set_size(*out_toggle, 50, 26);
+    lv_obj_set_ext_click_area(*out_toggle, kToggleClickExtension);
+    lv_obj_set_style_bg_color(*out_toggle, lv_color_hex(THEME_COLOR_MENU_SETTINGS),
+                             LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    *out_state_label = lv_label_create(toggle_col);
+    lv_obj_set_style_text_font(*out_state_label, &lv_font_montserrat_20, 0);
+    set_toggle_state_caption(*out_state_label, false);
+
+    lv_obj_add_event_cb(*out_toggle, toggle_state_caption_event_cb, LV_EVENT_VALUE_CHANGED, *out_state_label);
 
     return row;
 }
@@ -1567,6 +1719,7 @@ void MenuScreen::update_grind_mode_toggles() {
             lv_obj_clear_state(auto_start_toggle, LV_STATE_CHECKED);
         }
     }
+    set_toggle_state_caption(auto_start_state_label, auto_start_enabled);
 
     if (auto_return_toggle) {
         if (auto_return_enabled) {
@@ -1575,10 +1728,11 @@ void MenuScreen::update_grind_mode_toggles() {
             lv_obj_clear_state(auto_return_toggle, LV_STATE_CHECKED);
         }
     }
+    set_toggle_state_caption(auto_return_state_label, auto_return_enabled);
 
-    // Update grinder purge mode radio group selection
+    // Update grinder purge mode segmented control selection
     if (grinder_purge_mode_radio_group) {
-        radio_button_group_set_selection(grinder_purge_mode_radio_group, grinder_purge_mode_index);
+        segmented_control_set_selection(grinder_purge_mode_radio_group, grinder_purge_mode_index);
     }
 
     grinder_purge_amount_g = std::clamp(grinder_purge_amount_g, GRIND_PURGE_AMOUNT_MIN_G, GRIND_PURGE_AMOUNT_MAX_G);

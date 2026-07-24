@@ -24,23 +24,20 @@ lv_obj_t* create_dual_button_row(lv_obj_t* parent, lv_obj_t** left_button, lv_ob
 
 lv_obj_t* create_data_label(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool stacked = false);
 
-// Callback signature for radio button selection changes
-typedef void (*radio_button_callback_t)(int selected_index, void* user_data);
+// Callback signature for segmented control selection changes
+typedef void (*segmented_control_callback_t)(int selected_index, void* user_data);
 
-// Radio button group helper
-lv_obj_t* create_radio_button_group(
+// Joined-pill segmented control (e.g. "KEEP" / "REMOVE"): a single rounded, bordered
+// container with borderless flex-grow segments, the selected one filled with selected_color.
+lv_obj_t* create_segmented_control(
     lv_obj_t* parent,
-    const char* options[],           // Array of button labels
-    int option_count,                // Number of options
-    lv_flex_flow_t layout,          // LV_FLEX_FLOW_ROW or LV_FLEX_FLOW_COLUMN
+    const char* options[],           // Array of segment labels
+    int option_count,                // Number of segments
     int initial_selection,           // Initially selected index (0-based)
-    int32_t button_width,           // Width per button (-1 for auto)
-    int32_t button_height,          // Height per button
-    radio_button_callback_t callback, // Called when selection changes
-    void* user_data,                // Passed to callback
-    const uint32_t* selected_colors = nullptr // Per-option selected-state color (hex); nullptr = THEME_COLOR_PRIMARY for all
+    lv_color_t selected_color,       // Fill color for the selected segment
+    segmented_control_callback_t callback, // Called when selection changes
+    void* user_data                  // Passed to callback
 );
 
-// Radio button group utility functions
-void radio_button_group_set_selection(lv_obj_t* group, int selected_index);
-int radio_button_group_get_selection(lv_obj_t* group);
+void segmented_control_set_selection(lv_obj_t* control, int selected_index);
+int segmented_control_get_selection(lv_obj_t* control);
