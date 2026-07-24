@@ -45,6 +45,17 @@ The Smart Grind-by-Weight is a user-friendly, touch interface-driven, highly acc
 
 ---
 
+## 🆕 Recent Updates
+
+- **Redesigned menu UI** – new icon set with consistent weights and colored section headers, flat list rows with hairline dividers (replacing the old card-style rows), a reworked Grind Mode submenu matching Profile Mode's radio-row style, and a widened touch area on the menu/back/close buttons. The Display page's brightness/dimmed/auto-dim sliders were also redesigned with a full-width flat layout and a purple accent color.
+- **New grind modes** – added **Time Only mode** (skip weight calibration and grind purely by time) and switchable **Drip Coffee / Espresso** profile styles, each with independently saved presets. The menu was restructured into dedicated Profile Mode / Grind Mode pages to house these.
+- **BLE & stability fixes** – fixed a BLE re-enable crash and near-total heap exhaustion after boot, a touch freeze after a failed OTA update, a Ready screen crash on profile style switch, an NVS key length bug, and increased the OTA watchdog timeout from 15 to 30 minutes for more reliable updates over slower connections.
+- **Dead ends removed** – fixed a menu back-button tab jump, a swipe-gesture dead end that could strand users in Time mode with no way back, and cleaned up unused/dead code paths along the way.
+
+See [Releases](https://github.com/jaapp/smart-grind-by-weight/releases) for the full changelog.
+
+---
+
 ## 🧠 Intelligent Grinding Algorithm
 
 Our predictive grinding system uses a zero-shot learning approach that adapts to any conditions:
