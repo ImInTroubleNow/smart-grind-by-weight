@@ -198,7 +198,6 @@ private:
 public:
     void init(WeightSensor* lc, Grinder* gr, Preferences* prefs);
     void start_grind(float target_weight, uint32_t target_time_ms, GrindMode grind_mode);
-    void user_tare_request();
     void return_to_idle(); // Called by UI to acknowledge completion/timeout
     void stop_grind();
     void continue_from_purge(); // Called by UI to continue from PURGE_CONFIRM to PREDICTIVE
@@ -247,8 +246,6 @@ public:
         session_descriptor.profile_id = profile_id;
         session_descriptor.profile_style = profile_style;
     }
-    void send_measurements_data();           // Send structured measurement data via serial
-    
     // Getter methods for logger (to eliminate calculations in logger)
     float get_current_flow_rate() const;
     float get_motor_stop_target_weight() const { return motor_stop_target_weight; }
@@ -264,8 +261,6 @@ public:
     // Motor response latency accessors
     float get_motor_response_latency() const { return motor_response_latency_ms; }
     void set_motor_response_latency(float value);
-    float get_min_pulse_duration() const { return motor_response_latency_ms; }
-    float get_max_pulse_duration() const { return motor_response_latency_ms + GRIND_MOTOR_MAX_PULSE_DURATION_MS; }
     void load_motor_latency();
     void save_motor_latency(float value);
 
@@ -293,12 +288,8 @@ private:
     
     // Internal state methods (moved from public to prevent polling)
     bool show_taring_text() const { return phase == GrindPhase::INITIALIZING || phase == GrindPhase::SETUP || phase == GrindPhase::TARING || phase == GrindPhase::TARE_CONFIRM; }
-    bool is_completed() const { return phase == GrindPhase::COMPLETED; }
-    bool is_timeout() const { return phase == GrindPhase::TIMEOUT; } 
     int get_progress_percent() const;
     float get_grind_time() const;
-    GrindPhase get_phase() const { return phase; }
-    GrindPhase get_timeout_phase() const { return timeout_phase; }
     const char* get_phase_name(GrindPhase p = static_cast<GrindPhase>(-1)) const;
 
     void set_error_message(const char* message);

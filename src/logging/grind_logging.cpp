@@ -432,18 +432,6 @@ uint32_t GrindLogger::count_total_measurements_in_flash() const {
     return total_measurements;
 }
 
-void GrindLogger::send_current_session_via_serial() {
-    if (!current_session || !logging_active) {
-        LOG_BLE("No active session to display\n");
-        return;
-    }
-    
-    LOG_BLE("\n=== Current Grind Session %lu ===\n", current_session->session_id);
-    LOG_BLE("Target: %.1fg, Profile: %d, Style: %d\n", current_session->target_weight, current_session->profile_id, current_session->profile_style);
-    LOG_BLE("Events: %u/%d, Measurements: %u/%d\n", event_count, (int)EVENT_TEMP_BUFFER_SIZE, measurement_count, (int)MEASUREMENT_TEMP_BUFFER_SIZE);
-    LOG_BLE("=====================================\n");
-}
-
 uint32_t GrindLogger::get_total_flash_sessions() const {
     return count_sessions_in_flash();
 }
@@ -465,45 +453,6 @@ void GrindLogger::initialize_session_config() {
     current_session->flow_rate_threshold = GRIND_FLOW_DETECTION_THRESHOLD_GPS;
     // pulse_safety_factor_near_target field removed (was always 1.0f)
 }
-
-
-bool GrindLogger::write_time_series_session_to_flash(const GrindSession& session, const GrindEvent* events, const GrindMeasurement* measurements) {
-    File file = LittleFS.open(GRIND_LOG_FILE, "a");
-    if (!file) {
-        LOG_BLE("Failed to open log file for writing\n");
-        return false;
-    }
-    
-    TimeSeriesSessionHeader header;
-    header.session_id = session.session_id;
-    header.session_timestamp = session.session_timestamp;
-    header.session_size = sizeof(GrindSession) + (sizeof(GrindEvent) * event_count) + (sizeof(GrindMeasurement) * measurement_count);
-    header.checksum = calculate_checksum((const uint8_t*)&session, header.session_size);
-    header.event_count = event_count;
-    header.measurement_count = measurement_count;
-    header.schema_version = GRIND_LOG_SCHEMA_VERSION;
-    header.reserved = 0;
-
-    size_t written = 0;
-    written += file.write((uint8_t*)&header, sizeof(TimeSeriesSessionHeader));
-    written += file.write((uint8_t*)&session, sizeof(GrindSession));
-    written += file.write((uint8_t*)events, sizeof(GrindEvent) * event_count);
-    written += file.write((uint8_t*)measurements, sizeof(GrindMeasurement) * measurement_count);
-    
-    file.close();
-    
-    size_t expected = sizeof(TimeSeriesSessionHeader) + header.session_size;
-    if (written == expected) {
-        LOG_BLE("Wrote session %lu (%d events, %d measurements) to flash (%d bytes)\n", 
-                     session.session_id, event_count, measurement_count, written);
-        
-        return true;
-    } else {
-        LOG_BLE("Flash write error: wrote %d/%d bytes\n", written, expected);
-        return false;
-    }
-}
-
 
 
 static void write_uint32_le(uint8_t*& buffer, uint32_t value) {
@@ -848,7 +797,6 @@ bool GrindLogger::clear_all_sessions_from_flash() {
     return overall_result;
 }
 
-bool GrindLogger::remove_oldest_sessions(uint32_t sessions_to_remove) { return true; }
 uint32_t GrindLogger::calculate_checksum(const uint8_t* data, size_t length) { return 0; }
 
 void GrindLogger::reset_export_static_variables() {

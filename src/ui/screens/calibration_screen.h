@@ -21,7 +21,6 @@ private:
     lv_obj_t* cancel_button;
     lv_obj_t* plus_btn;
     lv_obj_t* minus_btn;
-    lv_obj_t* weight_input;
     lv_obj_t* top_button_row;
     CalibrationStep current_step;
     float calibration_weight;
@@ -48,6 +47,5 @@ public:
     lv_obj_t* get_cancel_button() const { return cancel_button; }
     lv_obj_t* get_plus_btn() const { return plus_btn; }
     lv_obj_t* get_minus_btn() const { return minus_btn; }
-    lv_obj_t* get_weight_input() const { return weight_input; }
     float get_calibration_weight() const { return calibration_weight; }
 };

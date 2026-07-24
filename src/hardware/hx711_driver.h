@@ -67,6 +67,5 @@ public:
     uint32_t get_max_sample_rate() const override { return HW_LOADCELL_SAMPLE_RATE_SPS; }
     float get_estimated_sample_rate_sps() const { return estimated_sample_rate_sps; }
 
-    uint8_t get_current_gain() const;
     const char* get_driver_name() const override { return "HX711"; }
 };

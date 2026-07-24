@@ -225,12 +225,6 @@ uint32_t StatisticsManager::get_profile_shots(int profile_index, ProfileStyle pr
     return snapshot_.profile_shots[profile_index];
 }
 
-uint32_t StatisticsManager::get_motor_runtime_sec() const {
-    if (!initialized_) return 0;
-    StatsLockGuard lock(g_stats_mutex);
-    return snapshot_.motor_runtime_sec;
-}
-
 uint64_t StatisticsManager::get_motor_runtime_ms() const {
     if (!initialized_) return 0;
     StatsLockGuard lock(g_stats_mutex);
@@ -292,22 +286,6 @@ float StatisticsManager::get_avg_pulses() const {
     StatsLockGuard lock(g_stats_mutex);
     if (snapshot_.pulse_sample_count == 0) return 0.0f;
     return snapshot_.pulse_sum / static_cast<float>(snapshot_.pulse_sample_count);
-}
-
-void StatisticsManager::reset_all() {
-    if (!initialized_) return;
-
-    StatsLockGuard lock(g_stats_mutex);
-    std::memset(&snapshot_, 0, sizeof(snapshot_));
-    snapshot_.version = StatisticsSnapshot::kVersion;
-    dirty_ = true;
-    pending_pulse_flush_counter_ = 0;
-    persist_locked(true);
-    last_flush_ms_ = millis();
-}
-
-void StatisticsManager::reset_statistics_only() {
-    reset_all();
 }
 
 void StatisticsManager::load_from_storage() {

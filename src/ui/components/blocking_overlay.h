@@ -40,12 +40,7 @@ public:
                           OperationCallback completion_func = nullptr,
                           const char* custom_message = nullptr);
     void hide_and_complete();
-    bool is_operation_active() const { return is_visible; }
-    
-    // Direct show/hide methods for non-blocking operations
-    void show(const char* message);
-    void hide();
-    
+
 private:
     const char* get_operation_message(BlockingOperation op_type, const char* custom_message);
     static void operation_timer_cb(lv_timer_t* timer);

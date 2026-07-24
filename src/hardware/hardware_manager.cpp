@@ -17,9 +17,8 @@ void HardwareManager::init() {
 void HardwareManager::update() {
     if (!initialized) return;
     
-    // All hardware components now updated independently by TaskScheduler:
-    // - weight_sensor.update() in "weight_sensor" task (10ms)  
-    // - display_manager.update() in "ui_display" task (16ms)
+    // All hardware components are updated independently by their own FreeRTOS
+    // tasks (WeightSamplingTask, GrindControlTask, UI render task in TaskManager).
     // No need for grinding mode switching - load cell runs at constant high speed
 }
 

@@ -50,7 +50,7 @@
 #define SYS_QUEUE_UI_TO_GRIND_SIZE 5                                           // UI events to grind controller
 #define SYS_QUEUE_FILE_IO_SIZE 20                                              // File I/O operation requests
 
-// Legacy task scheduler intervals (deprecated - kept for compatibility)
+// Load cell polling interval, used for delay() pacing in WeightSensor's blocking calibration loops
 #define SYS_TASK_LOADCELL_INTERVAL_MS 20                                       // Load cell polling frequency (50Hz)
 
 

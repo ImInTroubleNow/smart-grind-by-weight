@@ -252,6 +252,12 @@ bool OTAHandler::complete_ota() {
         LOG_BLE("OTA: Finalization failed\n");
         LOG_OTA_DEBUG("finalize_update() FAILED\n");
 
+        // Re-enable TouchDriver disabled for kamikaze mode above - there's no
+        // reboot on this path, so leaving it disabled would freeze the
+        // touchscreen for the rest of the running session.
+        LOG_OTA_DEBUG("Re-enabling TouchDriver I2C operations...\n");
+        hardware_manager.get_display()->get_touch_driver()->enable();
+
         // Resume hardware tasks on failure
         LOG_BLE("OTA: Resuming hardware tasks after failed finalization\n");
         task_manager.resume_hardware_tasks();

@@ -500,10 +500,6 @@ float WeightSensor::get_flow_rate_95th_percentile(uint32_t window_ms) const {
     return raw_flow / cal_factor;  // Convert raw units per second to grams per second
 }
 
-bool WeightSensor::is_flow_rate_stable(uint32_t window_ms) const {
-    return raw_filter.raw_flowrate_is_stable(window_ms);
-}
-
 int WeightSensor::get_sample_count() const {
     return raw_filter.get_sample_count();
 }
@@ -581,21 +577,6 @@ void WeightSensor::load_calibration() {
     }
 }
 
-void WeightSensor::clear_calibration_data() {
-#if DEBUG_ENABLE_LOADCELL_MOCK
-    cal_factor = DEBUG_MOCK_CAL_FACTOR;
-    LOG_BLE("Mock load cell: calibration data reset to fixed factor.\n");
-    return;
-#endif
-    if (prefs) {
-        LOG_BLE("Clearing corrupted calibration data...\n");
-        prefs->remove("hx_cal");
-        prefs->remove("hx_wt");
-        cal_factor = USER_DEFAULT_CALIBRATION_FACTOR;
-        LOG_BLE("Calibration data cleared, using defaults\n");
-    }
-}
-
 bool WeightSensor::is_calibrated() const {
     if (!calibration_flag_cached_) {
         Preferences load_cell_prefs;
@@ -654,11 +635,6 @@ bool WeightSensor::check_settling_complete(uint32_t window_ms, float* settled_we
     }
     
     return false; // Still settling
-}
-
-void WeightSensor::cancel_settling() {
-    // Settling cancellation no longer needed with direct window_ms approach
-    LOG_SETTLING_DEBUG("[DEBUG %lums] SETTLING_CANCEL: Settling cancelled\n", millis());
 }
 
 //==============================================================================

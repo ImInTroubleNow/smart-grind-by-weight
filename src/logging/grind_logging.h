@@ -25,7 +25,6 @@ class Grinder;
 // Flash storage settings
 #define GRIND_SESSIONS_DIR "/sessions"                      // Directory for individual session files
 #define SESSION_FILE_FORMAT "/sessions/session_%lu.bin"    // Individual session file naming format
-#define GRIND_LOG_FILE "/grind_sessions.bin"                // Legacy single-file storage (deprecated)
 #define MAX_STORED_SESSIONS_FLASH 10                        // Maximum sessions to keep in flash (configurable)
 
 #pragma pack(push, 1)
@@ -194,8 +193,7 @@ public:
     // Fixed-length binary export method
     void export_sessions_binary_chunk(uint8_t* buffer, size_t buffer_size,
                                      uint32_t start_pos, uint32_t* next_pos, size_t* actual_size);
-    void send_current_session_via_serial();  // Debug output for current session
-    
+
     // Data access
     uint32_t get_total_flash_sessions() const;
     bool is_logging_active() const { return logging_active; }
@@ -221,8 +219,6 @@ private:
     
     // Flash storage helpers
     uint32_t calculate_checksum(const uint8_t* data, size_t length); // Simple checksum calculation
-    bool write_time_series_session_to_flash(const GrindSession& session, const GrindEvent* events, const GrindMeasurement* measurements);
-    bool remove_oldest_sessions(uint32_t sessions_to_remove); // Remove oldest sessions from flash file (legacy)
     
     // Individual session file management
     bool ensure_sessions_directory_exists();    // Create sessions directory if needed

@@ -10,7 +10,6 @@ public:
     explicit JogAdjustController(UIManager* manager);
 
     void register_events();
-    void update();
     void start(int direction);
     void stop();
     void handle_timer(lv_timer_t* timer);

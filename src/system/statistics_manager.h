@@ -44,7 +44,6 @@ public:
     // Retrieval methods
     uint32_t get_total_grinds() const;
     uint32_t get_profile_shots(int profile_index, ProfileStyle profile_style = ProfileStyle::DRIP) const;
-    uint32_t get_motor_runtime_sec() const;
     uint64_t get_motor_runtime_ms() const;
     uint32_t get_device_uptime_hrs() const;
     uint32_t get_device_uptime_min_remainder() const;
@@ -55,10 +54,6 @@ public:
     float get_avg_accuracy_g() const;
     uint32_t get_total_pulses() const;
     float get_avg_pulses() const;
-
-    // Reset operations
-    void reset_all();             // Clear all statistics (factory reset)
-    void reset_statistics_only(); // Clear statistics but keep device config
 
 private:
     void load_from_storage();

@@ -141,8 +141,7 @@ public:
     
     // Unified settling methods with window_ms
     bool check_settling_complete(uint32_t window_ms, float* settled_weight_out = nullptr);
-    void cancel_settling();
-    
+
     // Load cell noise level diagnostic for UI display
     // Returns true if noise level is acceptable (shows "OK"), false if excessive (shows "Too High")
     // Uses sustained 3-second check to filter out brief motor/electrical interference
@@ -168,8 +167,7 @@ public:
     // Flow rate analysis using CircularBufferMath
     float get_flow_rate(uint32_t window_ms = 200) const;     // Flow rate calculation (default 200ms window)
     float get_flow_rate_95th_percentile(uint32_t window_ms = 200) const; // 95th percentile flow rate for dynamic pulse algorithm
-    bool is_flow_rate_stable(uint32_t window_ms = 100) const; // Check if flow rate has stabilized
-    
+
     // Settling methods - WARNING: These methods block execution!
     float get_motor_settled_weight(float* settle_time_out = nullptr);     // Motor settling (300ms window) - for after motor vibrations
     float get_precision_settled_weight(float* settle_time_out = nullptr); // Precision settling (500ms window) - for tare/calibration/final measurements
@@ -190,7 +188,6 @@ public:
     void save_calibration_weight(float weight);
     float get_saved_calibration_weight();
     void load_calibration();
-    void clear_calibration_data();
 
     // Calibration flag (for diagnostics)
     bool is_calibrated() const;

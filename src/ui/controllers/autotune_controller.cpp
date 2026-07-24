@@ -79,12 +79,6 @@ void AutoTuneUIController::update() {
     }
 }
 
-void AutoTuneUIController::start_autotune() {
-    // Deprecated - use confirm_and_begin() instead
-    // This is kept for backwards compatibility
-    confirm_and_begin();
-}
-
 void AutoTuneUIController::confirm_and_begin() {
     // This is called AFTER user has already confirmed in menu screen
     // So we just start the autotune process directly

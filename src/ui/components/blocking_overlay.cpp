@@ -135,18 +135,3 @@ void BlockingOperationOverlay::operation_timer_cb(lv_timer_t* timer) {
     instance->hide_and_complete();
 }
 
-void BlockingOperationOverlay::show(const char* message) {
-    // Set message
-    lv_label_set_text(label, message);
-    
-    // Show overlay
-    lv_obj_clear_flag(overlay, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_foreground(overlay);
-    is_visible = true;
-}
-
-void BlockingOperationOverlay::hide() {
-    // Hide overlay
-    lv_obj_add_flag(overlay, LV_OBJ_FLAG_HIDDEN);
-    is_visible = false;
-}

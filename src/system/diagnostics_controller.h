@@ -23,7 +23,6 @@ struct DiagnosticState {
     DiagnosticCode code;
     unsigned long first_detected_ms;
     unsigned long last_seen_ms;
-    bool user_acknowledged;
     uint32_t occurrence_count;
 };
 
@@ -42,12 +41,9 @@ public:
     // Query diagnostic state
     DiagnosticCode get_highest_priority_warning() const;
     std::vector<DiagnosticState> get_active_diagnostics() const;
-    bool has_active_diagnostics() const;
 
     // User interactions
-    void acknowledge_diagnostic(DiagnosticCode code);
     void reset_diagnostic(DiagnosticCode code);
-    void reset_all_transient_diagnostics();
 
     // Helper to get human-readable diagnostic message
     const char* get_diagnostic_message(DiagnosticCode code) const;

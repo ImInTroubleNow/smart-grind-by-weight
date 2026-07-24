@@ -6,7 +6,6 @@
 #include <LittleFS.h>
 #include <nvs_flash.h>
 #include <nvs.h>
-#include "../system/performance_monitor.h"
 #include "../system/statistics_manager.h"
 #include "../system/diagnostics_controller.h"
 #include "../config/constants.h"

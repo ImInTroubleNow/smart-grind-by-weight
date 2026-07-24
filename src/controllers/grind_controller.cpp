@@ -213,11 +213,6 @@ void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grin
     switch_phase(GrindPhase::INITIALIZING, loop_data);
 }
 
-void GrindController::user_tare_request() {
-    // Tare request is now handled automatically when grinding starts
-    // This function is kept for compatibility but does nothing
-}
-
 void GrindController::return_to_idle() {
     // This is called by the UI to acknowledge a completed or timed-out grind
     // and return the controller to the IDLE state.
@@ -886,10 +881,6 @@ uint8_t GrindController::get_current_phase_id() const {
     return (uint8_t)phase;
 }
 
-
-void GrindController::send_measurements_data() {
-    grind_logger.send_current_session_via_serial();
-}
 
 float GrindController::get_current_flow_rate() const {
     return weight_sensor->get_flow_rate(); 

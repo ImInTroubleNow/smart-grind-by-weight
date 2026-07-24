@@ -70,11 +70,6 @@ void CalibrationScreen::create() {
     lv_obj_add_flag(minus_btn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(plus_btn, LV_OBJ_FLAG_HIDDEN);
 
-    // Hidden weight input (keeping for compatibility but not used in UI)
-    weight_input = lv_textarea_create(screen);
-    lv_obj_set_size(weight_input, 1, 1);
-    lv_obj_add_flag(weight_input, LV_OBJ_FLAG_HIDDEN);
-
     current_step = CAL_STEP_EMPTY;
     calibration_weight = 20.0f; // Default calibration weight
     visible = false;
@@ -173,12 +168,7 @@ void CalibrationScreen::update_current_weight(float weight) {
 
 void CalibrationScreen::update_calibration_weight(float weight) {
     calibration_weight = weight;
-    
-    // Update the weight_input for compatibility
-    char weight_text[16];
-    snprintf(weight_text, sizeof(weight_text), "%.1f", weight);
-    lv_textarea_set_text(weight_input, weight_text);
-    
+
     // Also update the main weight label if we're in the weight step
     if (current_step == CAL_STEP_WEIGHT) {
         char weight_display[16];

@@ -427,11 +427,9 @@ void TaskManager::ui_render_task_impl() {
             grind_controller->process_queued_ui_events();
         }
 
-        // UI rendering separated from touch handling
-        // Process touch events from TouchInputTask queue
-        // TODO: Process touch events from queue and update UI
-
-        // UI logic and display updates (separated from touch input)
+        // UI logic and display updates. Touch is read directly by LVGL's
+        // indev callback (see display_manager.cpp) during lv_timer_handler()
+        // below, not through a separate queue.
         if (ui_manager) {
             // Drain BLE UI status messages here to keep LVGL single-threaded
             if (bluetooth_manager) {

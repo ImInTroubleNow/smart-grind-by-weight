@@ -108,7 +108,6 @@ public:
 
     // Status methods
     bool is_active() const { return is_running; }
-    AutoTunePhase get_phase() const { return current_phase; }
     const AutoTuneProgress& get_progress() const { return progress; }
     const AutoTuneResult& get_result() const { return result; }
     void clear_message_flag() { progress.has_new_message = false; }

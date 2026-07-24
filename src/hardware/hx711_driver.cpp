@@ -218,11 +218,3 @@ bool HX711Driver::validate_hardware() {
     return successful_reads >= 3;
 }
 
-uint8_t HX711Driver::get_current_gain() const {
-    switch (gain) {
-        case 1: return 128;
-        case 2: return 32;
-        case 3: return 64;
-        default: return 128;
-    }
-}

@@ -10,8 +10,6 @@ JogAdjustController::JogAdjustController(UIManager* manager)
 
 void JogAdjustController::register_events() {}
 
-void JogAdjustController::update() {}
-
 void JogAdjustController::start(int direction) {
     if (!ui_manager_) {
         return;

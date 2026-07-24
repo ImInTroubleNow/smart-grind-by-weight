@@ -159,31 +159,8 @@ std::vector<DiagnosticState> DiagnosticsController::get_active_diagnostics() con
     return active_diagnostics_;
 }
 
-bool DiagnosticsController::has_active_diagnostics() const {
-    return !active_diagnostics_.empty();
-}
-
-void DiagnosticsController::acknowledge_diagnostic(DiagnosticCode code) {
-    DiagnosticState* diag = find_diagnostic(code);
-    if (diag) {
-        diag->user_acknowledged = true;
-    }
-}
-
 void DiagnosticsController::reset_diagnostic(DiagnosticCode code) {
     clear_diagnostic(code);
-}
-
-void DiagnosticsController::reset_all_transient_diagnostics() {
-    // Clear all diagnostics that have been acknowledged
-    auto it = active_diagnostics_.begin();
-    while (it != active_diagnostics_.end()) {
-        if (it->user_acknowledged) {
-            it = active_diagnostics_.erase(it);
-        } else {
-            ++it;
-        }
-    }
 }
 
 const char* DiagnosticsController::get_diagnostic_message(DiagnosticCode code) const {
@@ -218,7 +195,6 @@ void DiagnosticsController::set_diagnostic_active(DiagnosticCode code) {
         new_diag.code = code;
         new_diag.first_detected_ms = millis();
         new_diag.last_seen_ms = millis();
-        new_diag.user_acknowledged = false;
         new_diag.occurrence_count = 1;
         active_diagnostics_.push_back(new_diag);
     }
