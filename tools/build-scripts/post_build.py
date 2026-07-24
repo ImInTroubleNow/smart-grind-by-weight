@@ -40,32 +40,32 @@ def archive_firmware(source, target, env):
     firmware_path = os.path.join(build_dir, "firmware.bin")
     
     if not os.path.exists(firmware_path):
-        print(f"❌ Firmware binary not found: {firmware_path}")
+        print(f"[ERROR] Firmware binary not found: {firmware_path}")
         return
-    
+
     # Set up cache directory
     cache_dir = os.path.join(project_dir, "firmware_cache")
-    
+
     # Get build number and firmware info
     build_number = get_build_number(env)
     firmware_size = os.path.getsize(firmware_path)
-    
-    print(f"📦 Firmware: {firmware_size:,} bytes ({firmware_size/1024:.1f} KB)")
-    print(f"🔢 Build number: {build_number}")
-    
+
+    print(f"Firmware: {firmware_size:,} bytes ({firmware_size/1024:.1f} KB)")
+    print(f"Build number: {build_number}")
+
     # Create cache directory if needed
     os.makedirs(cache_dir, exist_ok=True)
-    
+
     # Archive the firmware with build number naming
     cached_firmware_path = os.path.join(cache_dir, f"build_{build_number:03d}.bin")
-    
+
     try:
         shutil.copy2(firmware_path, cached_firmware_path)
-        print(f"✅ Archived firmware: build_{build_number:03d}.bin")
-        print(f"📁 Cache location: {cached_firmware_path}")
-        
+        print(f"[OK] Archived firmware: build_{build_number:03d}.bin")
+        print(f"Cache location: {cached_firmware_path}")
+
     except Exception as e:
-        print(f"❌ Failed to archive firmware: {e}")
+        print(f"[ERROR] Failed to archive firmware: {e}")
         return
     
     print("==========================================")
