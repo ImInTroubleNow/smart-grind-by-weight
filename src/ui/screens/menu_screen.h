@@ -12,6 +12,7 @@ class MenuScreen {
 private:
     lv_obj_t* screen;
     lv_obj_t* menu;
+    lv_obj_t* main_page;
     lv_obj_t* info_page;
     lv_obj_t* bluetooth_page;
     lv_obj_t* display_page;

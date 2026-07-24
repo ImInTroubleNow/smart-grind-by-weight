@@ -1,7 +1,7 @@
 #pragma once
 
 // UTF-8 encodings of the custom_icons_24 icon font glyphs (Private Use Area
-// codepoints assigned in Icomoon, U+E900-U+E90F).
+// codepoints assigned in Icomoon, U+E900-U+E910).
 #define ICON_BEAN            "\xEE\xA4\x80" // U+E900 - solid coffee bean
 #define ICON_DROPLET         "\xEE\xA4\x81" // U+E901 - water droplet
 #define ICON_WATCH           "\xEE\xA4\x82" // U+E902 - watch/clock
@@ -18,3 +18,4 @@
 #define ICON_DISPLAY         "\xEE\xA4\x8D" // U+E90D - sun
 #define ICON_BLUETOOTH       "\xEE\xA4\x8E" // U+E90E - bluetooth
 #define ICON_CALIBRATE       "\xEE\xA4\x8F" // U+E90F - crosshair/target
+#define ICON_MENU            "\xEE\xA4\x90" // U+E910 - hamburger menu

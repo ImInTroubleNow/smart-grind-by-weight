@@ -73,46 +73,75 @@ void MenuScreen::create_menu_ui() {
     lv_obj_t* header = lv_menu_get_main_header(menu);
     lv_obj_set_layout(header, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(header, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_align(header, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_coord_t title_base_height = lv_font_get_line_height(&lv_font_montserrat_36);
     lv_coord_t title_target_height = (title_base_height * 3) / 2; // ~50% taller
     lv_coord_t title_padding = (title_target_height - title_base_height) / 2;
     lv_obj_set_style_min_height(header, title_target_height, 0);
     lv_obj_set_style_pad_top(header, title_padding, 0);
     lv_obj_set_style_pad_bottom(header, title_padding, 0);
+    // Theme's default menu header style adds horizontal padding; zero it so
+    // the back/close button's absolute-position offset below lines up with
+    // the header's true left edge (matching the Ready screen's icon).
+    lv_obj_set_style_pad_left(header, 0, 0);
+    lv_obj_set_style_pad_right(header, 0, 0);
 
-    // Get the header label
+    // Get the header label - grown to fill the header so its centered text
+    // is centered across the whole row, independent of the back/close button
+    // (which is pulled out of layout flow below and no longer needs a
+    // matching spacer to balance it).
     lv_obj_t* header_label = lv_obj_get_child(header, -1);
     if (header_label) {
         lv_obj_set_style_text_align(header_label, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_set_style_text_font(header_label, &lv_font_montserrat_36, 0);
         lv_obj_set_style_text_color(header_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-        lv_obj_set_style_min_height(header_label, title_target_height, 0);
-        lv_obj_set_style_pad_top(header_label, title_padding, 0);
-        lv_obj_set_style_pad_bottom(header_label, title_padding, 0);
+        // Drop the title into its own row entirely below the top icon strip
+        // (back/close button bottom edge is at y=46; the warning/Bluetooth
+        // status icons in the top-right are shorter) so it can never collide
+        // with any of them, regardless of title length. Text is top-anchored
+        // within its content box, so pad_top directly controls where it
+        // starts; ~4px of clearance below the lowest icon puts that at 50.
+        // header's own pad_top (title_padding) already pushes header_label's
+        // box down before this padding is even applied, so subtract it here
+        // to land on an absolute 50px from the screen's top edge. Applies to
+        // every page's title since they all share this one label.
+        lv_coord_t title_pad_top = 50 - title_padding;
+        lv_coord_t title_pad_bottom = title_padding;
+        lv_obj_set_style_min_height(header_label, title_base_height + title_pad_top + title_pad_bottom, 0);
+        lv_obj_set_style_pad_top(header_label, title_pad_top, 0);
+        lv_obj_set_style_pad_bottom(header_label, title_pad_bottom, 0);
+        lv_obj_set_flex_grow(header_label, 1);
     }
-    // Get and style the chevron first
+
+    // Back/close button - pulled out of the header's flex flow and pinned to
+    // the exact same on-screen spot as the Ready screen's menu icon (44x44
+    // circle, top-left at 8,2) so it reads as one button morphing in place:
+    // "X" to close the menu from the root page, chevron to go back from a
+    // sub-page. LV_ALIGN offsets land relative to the parent's padded
+    // content box, so the vertical offset subtracts header's top padding to
+    // land at an absolute 2px from the header's top edge.
     lv_obj_t* back_chevron = lv_menu_get_main_header_back_button(menu);
+    lv_obj_add_flag(back_chevron, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_size(back_chevron, 44, 44);
+    lv_obj_set_flex_align(back_chevron, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_radius(back_chevron, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(back_chevron, lv_color_hex(THEME_COLOR_BACKGROUND), 0);
+    lv_obj_set_style_bg_opa(back_chevron, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(back_chevron, 0, 0);
+    lv_obj_set_style_shadow_width(back_chevron, 0, 0);
+    lv_obj_set_style_pad_all(back_chevron, 0, 0);
     lv_obj_set_style_text_font(back_chevron, &lv_font_montserrat_32, 0);
-    lv_obj_set_ext_click_area(back_chevron, 200);
     lv_obj_set_style_text_color(back_chevron, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_min_height(back_chevron, title_target_height, 0);
-    lv_obj_set_style_pad_top(back_chevron, title_padding, 0);
-    lv_obj_set_style_pad_bottom(back_chevron, title_padding, 0);
+    lv_obj_align(back_chevron, LV_ALIGN_TOP_LEFT, 8, 2 - title_padding);
 
-    // Force layout update to get proper chevron dimensions
-    lv_obj_update_layout(header);
-
-    // Create spacer using chevron's actual size
-    // Spacer is used to center name of the page name in the header
-    lv_obj_t* spacer = lv_obj_create(header);
-    lv_obj_set_size(spacer, lv_obj_get_width(back_chevron), lv_obj_get_height(back_chevron));
-    lv_obj_set_style_bg_opa(spacer, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(spacer, 0, 0);
-    lv_obj_clear_flag(spacer, LV_OBJ_FLAG_SCROLLABLE);
+    // Root page starts on "Menu" (closes the menu), so start the icon as "X"
+    lv_obj_t* back_icon = lv_obj_get_child(back_chevron, 0);
+    if (back_icon) {
+        lv_image_set_src(back_icon, LV_SYMBOL_CLOSE);
+    }
 
     // Create main page last
-    lv_obj_t* main_page = lv_menu_page_create(menu, "Menu");
+    main_page = lv_menu_page_create(menu, "Menu");
     lv_obj_set_layout(main_page, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(main_page, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_all(main_page, 0, 0);
@@ -226,6 +255,15 @@ void MenuScreen::create_menu_ui() {
         MenuScreen * self = static_cast<MenuScreen*>(lv_event_get_user_data(e));
         lv_obj_t * menu = static_cast<lv_obj_t *>(lv_event_get_target(e));
         lv_obj_t * cur = lv_menu_get_cur_main_page(menu);
+
+        // Swap the shared back button's glyph: "X" closes the menu from the
+        // root page, chevron goes back up one level from any sub-page.
+        lv_obj_t * back_btn = lv_menu_get_main_header_back_button(menu);
+        lv_obj_t * back_icon = lv_obj_get_child(back_btn, 0);
+        if (back_icon) {
+            lv_image_set_src(back_icon, cur == self->main_page ? LV_SYMBOL_CLOSE : LV_SYMBOL_LEFT);
+        }
+
         if (cur == self->data_page || cur == self->stats_page) {
             self->refresh_statistics();
         }

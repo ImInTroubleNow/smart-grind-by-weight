@@ -40,17 +40,19 @@ void ReadyScreen::create(ProfileController* profile_controller) {
     // visible above every profile tab, giving 1-tap access to Menu from anywhere.
     menu_icon_button = lv_btn_create(screen);
     lv_obj_set_size(menu_icon_button, 44, 44);
-    lv_obj_align(menu_icon_button, LV_ALIGN_TOP_LEFT, 8, 8);
+    lv_obj_align(menu_icon_button, LV_ALIGN_TOP_LEFT, 8, 2);
     lv_obj_set_style_radius(menu_icon_button, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(menu_icon_button, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
-    lv_obj_set_style_bg_opa(menu_icon_button, LV_OPA_60, 0);
+    lv_obj_set_style_bg_color(menu_icon_button, lv_color_hex(THEME_COLOR_BACKGROUND), 0);
+    lv_obj_set_style_bg_opa(menu_icon_button, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(menu_icon_button, 0, 0);
     lv_obj_set_style_shadow_width(menu_icon_button, 0, 0);
     lv_obj_move_foreground(menu_icon_button);
 
     lv_obj_t* menu_icon = lv_label_create(menu_icon_button);
-    lv_label_set_text(menu_icon, LV_SYMBOL_LIST);
-    lv_obj_set_style_text_font(menu_icon, &lv_font_montserrat_24, 0);
+    lv_label_set_text(menu_icon, ICON_MENU);
+    lv_obj_set_style_text_font(menu_icon, &lv_font_custom_icons_24, 0);
+    lv_obj_set_style_transform_scale_x(menu_icon, 220, 0);
+    lv_obj_set_style_transform_scale_y(menu_icon, 220, 0);
     lv_obj_center(menu_icon);
 
     // Page-dot indicator - lives directly on the root screen (not inside
