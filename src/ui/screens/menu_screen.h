@@ -54,6 +54,7 @@ private:
     lv_obj_t* ble_status_label;
     lv_obj_t* ble_timer_label;
     lv_obj_t* logging_toggle;
+    lv_obj_t* logging_state_label;
     lv_obj_t* brightness_normal_slider;
     lv_obj_t* brightness_screensaver_slider;
     lv_obj_t* brightness_normal_label;
@@ -180,7 +181,11 @@ private:
     lv_obj_t *create_toggle_row(lv_obj_t *parent, const char *text,lv_obj_t **out_toggle);
     lv_obj_t *create_flat_toggle_row(lv_obj_t *parent, const char *name, lv_obj_t **out_toggle, bool with_divider = true);
     lv_obj_t *create_flat_toggle_desc_row(lv_obj_t *parent, const char *name, const char *description,
-                                          lv_obj_t **out_toggle, lv_obj_t **out_state_label);
+                                          lv_obj_t **out_toggle, lv_obj_t **out_state_label,
+                                          lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS),
+                                          const lv_font_t *name_font = &lv_font_montserrat_20);
+    lv_obj_t *create_flat_data_row(lv_obj_t *parent, const char *name, lv_obj_t **value_label, bool with_divider = true);
+    lv_obj_t *create_outline_button(lv_obj_t *parent, const char *text, lv_color_t color, int32_t width_pct = 100);
     lv_obj_t *create_display_slider_row(lv_obj_t *parent, const char *name,
                                         lv_obj_t **value_label, lv_obj_t **slider,
                                         uint32_t min = 0, uint32_t max = 100,

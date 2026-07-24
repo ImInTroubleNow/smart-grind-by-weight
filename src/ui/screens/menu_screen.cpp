@@ -11,6 +11,11 @@
 #include "../components/blocking_overlay.h"
 #include "../fonts/custom_icons.h"
 
+// Defined further below, alongside the other flat-toggle-row helpers; forward
+// declared here so update_logging_toggle() can sync the caption on load.
+static void set_toggle_state_caption(lv_obj_t* state_label, bool checked,
+                                     lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS));
+
 static void back_event_handler(lv_event_t * e)
 {
     lv_obj_t * obj = lv_event_get_target_obj(e);
@@ -661,27 +666,59 @@ void MenuScreen::create_data_page(lv_obj_t* parent) {
     lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    
+
     // Enable vertical scrolling on the reset page
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
-    create_description_label(parent, "Saved grind logs stored on the grinder for export/analysis.");
+    create_description_label(parent, "Manage stored grind logs.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
 
-    create_toggle_row(parent, "Logging", &logging_toggle);
+    create_flat_toggle_desc_row(parent, "LOGGING", "Record grind sessions.",
+                               &logging_toggle, &logging_state_label,
+                               lv_color_hex(THEME_COLOR_MENU_SYSTEM), &lv_font_montserrat_24);
 
-    // Log data section
-    create_separator(parent, "Log Data");
-    create_data_label(parent, "Sessions:", &sessions_label);
-    create_data_label(parent, "Events:", &events_label);
-    create_data_label(parent, "Metrics:", &measurements_label);
+    // Stored Data section
+    create_description_label(parent, "STORED DATA", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_flat_data_row(parent, "Sessions", &sessions_label, false);
+    create_flat_data_row(parent, "Events", &events_label, false);
+    create_flat_data_row(parent, "Metrics", &measurements_label, true); // divider separates this section from Maintenance
 
-    // Reset separator
-    create_separator(parent, "Reset");
+    // Maintenance section
+    create_description_label(parent, "MAINTENANCE", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
 
-    purge_button = create_button(parent, "Purge Logs", lv_color_hex(THEME_COLOR_WARNING));
-    lv_obj_set_style_margin_bottom(purge_button, 10, 0);
-    reset_button = create_button(parent, "Factory Reset", lv_color_hex(THEME_COLOR_ERROR));
+    create_description_label(parent, "Purge stored logs.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    // Inset wrapper widens the button's clearance from the page's scrollbar
+    // (matches the 20px used for the Stored Data values above) - the button
+    // itself stays full width of this narrowed wrapper, same size as before.
+    lv_obj_t* purge_wrapper = lv_obj_create(parent);
+    lv_obj_set_size(purge_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(purge_wrapper, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(purge_wrapper, 0, 0);
+    lv_obj_set_style_pad_hor(purge_wrapper, 20, 0);
+    lv_obj_set_style_pad_ver(purge_wrapper, 0, 0);
+    lv_obj_clear_flag(purge_wrapper, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(purge_wrapper, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(purge_wrapper, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(purge_wrapper, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    purge_button = create_outline_button(purge_wrapper, LV_SYMBOL_TRASH "  Purge Logs", lv_color_hex(THEME_COLOR_WARNING));
+    lv_obj_set_style_margin_bottom(purge_wrapper, 18, 0);
+
+    create_description_label(parent, "Restore factory settings.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    lv_obj_t* reset_wrapper = lv_obj_create(parent);
+    lv_obj_set_size(reset_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(reset_wrapper, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(reset_wrapper, 0, 0);
+    lv_obj_set_style_pad_hor(reset_wrapper, 20, 0);
+    lv_obj_set_style_pad_ver(reset_wrapper, 0, 0);
+    lv_obj_clear_flag(reset_wrapper, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(reset_wrapper, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(reset_wrapper, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(reset_wrapper, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    reset_button = create_outline_button(reset_wrapper, LV_SYMBOL_WARNING "  Factory Reset", lv_color_hex(THEME_COLOR_ERROR));
 
     // Register events for the toggle and buttons (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -1220,6 +1257,7 @@ void MenuScreen::update_logging_toggle() {
     } else {
         lv_obj_clear_state(logging_toggle, LV_STATE_CHECKED);
     }
+    set_toggle_state_caption(logging_state_label, logging_enabled, lv_color_hex(THEME_COLOR_MENU_SYSTEM));
 }
 
 lv_obj_t* MenuScreen::create_menu_item(lv_obj_t* parent, const char* text, const char* icon_char, lv_color_t icon_color) {
@@ -1394,24 +1432,83 @@ lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name,
     return row;
 }
 
+lv_obj_t* MenuScreen::create_flat_data_row(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool with_divider) {
+    // Same flat row shell as create_flat_toggle_row, but with a right-aligned
+    // value label instead of a switch - matches the Logs page's stat rows.
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(row, 0, 0);
+    lv_obj_set_style_border_width(row, with_divider ? 1 : 0, 0);
+    lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_color(row, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_border_opa(row, LV_OPA_30, 0);
+    // Right padding is wider than the flat toggle rows' symmetric 10px so the
+    // right-aligned value clears the page's scrollbar instead of colliding with it.
+    lv_obj_set_style_pad_left(row, 10, 0);
+    lv_obj_set_style_pad_right(row, 20, 0);
+    lv_obj_set_style_pad_top(row, 6, 0);
+    lv_obj_set_style_pad_bottom(row, 6, 0);
+    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* name_label = lv_label_create(row);
+    lv_label_set_text(name_label, name);
+    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    *value_label = lv_label_create(row);
+    lv_obj_set_style_text_font(*value_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(*value_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+
+    return row;
+}
+
+lv_obj_t* MenuScreen::create_outline_button(lv_obj_t* parent, const char* text, lv_color_t color, int32_t width_pct) {
+    // Bordered, transparent-fill button - matches the Logs page's Purge/Reset
+    // actions instead of the app's usual solid-fill create_button().
+    lv_obj_t* button = lv_btn_create(parent);
+    lv_obj_set_size(button, LV_PCT(width_pct), 52); // Matches the Purging segmented control's height
+    lv_obj_set_style_radius(button, THEME_CORNER_RADIUS_PX, 0);
+    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(button, 2, 0);
+    lv_obj_set_style_border_color(button, color, 0);
+    lv_obj_set_style_shadow_width(button, 0, 0);
+    lv_obj_clear_flag(button, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* label = lv_label_create(button);
+    lv_label_set_text(label, text);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(label, color, 0);
+    lv_obj_center(label);
+
+    return button;
+}
+
 // Updates a toggle's ON/OFF caption label. Shared by the value-changed callback below
 // (for live edits) and update_grind_mode_toggles() (for the initial load-from-prefs sync,
 // which sets switch state directly and so never fires LV_EVENT_VALUE_CHANGED).
-static void set_toggle_state_caption(lv_obj_t* state_label, bool checked) {
+static void set_toggle_state_caption(lv_obj_t* state_label, bool checked, lv_color_t accent_color) {
     if (!state_label) return;
     lv_label_set_text(state_label, checked ? "ON" : "OFF");
-    lv_obj_set_style_text_color(state_label,
-                               checked ? lv_color_hex(THEME_COLOR_MENU_SETTINGS) : lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+    lv_obj_set_style_text_color(state_label, checked ? accent_color : lv_color_hex(THEME_COLOR_NEUTRAL), 0);
 }
 
+// The accent color is stashed on the state label's own user_data (packed into
+// the pointer) so this shared callback can recover it per-row without a heap
+// allocation - each row's create_flat_toggle_desc_row() call stores it there.
 static void toggle_state_caption_event_cb(lv_event_t* e) {
     lv_obj_t* toggle = (lv_obj_t*)lv_event_get_target(e);
     lv_obj_t* state_label = (lv_obj_t*)lv_event_get_user_data(e);
-    set_toggle_state_caption(state_label, lv_obj_has_state(toggle, LV_STATE_CHECKED));
+    uint32_t accent = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(lv_obj_get_user_data(state_label)));
+    set_toggle_state_caption(state_label, lv_obj_has_state(toggle, LV_STATE_CHECKED), lv_color_hex(accent));
 }
 
 lv_obj_t* MenuScreen::create_flat_toggle_desc_row(lv_obj_t* parent, const char* name, const char* description,
-                                                   lv_obj_t** out_toggle, lv_obj_t** out_state_label) {
+                                                   lv_obj_t** out_toggle, lv_obj_t** out_state_label,
+                                                   lv_color_t accent_color, const lv_font_t* name_font) {
     // Flat row: title + wrapped description on the left, switch + ON/OFF caption on the right,
     // bottom hairline divider - matches the Display/Bluetooth pages' flat row style.
     lv_obj_t* row = lv_obj_create(parent);
@@ -1447,7 +1544,7 @@ lv_obj_t* MenuScreen::create_flat_toggle_desc_row(lv_obj_t* parent, const char* 
 
     lv_obj_t* name_label = lv_label_create(text_col);
     lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(name_label, name_font, 0);
     lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
 
     lv_obj_t* desc_label = lv_label_create(text_col);
@@ -1481,12 +1578,12 @@ lv_obj_t* MenuScreen::create_flat_toggle_desc_row(lv_obj_t* parent, const char* 
     *out_toggle = lv_switch_create(toggle_col);
     lv_obj_set_size(*out_toggle, 50, 26);
     lv_obj_set_ext_click_area(*out_toggle, kToggleClickExtension);
-    lv_obj_set_style_bg_color(*out_toggle, lv_color_hex(THEME_COLOR_MENU_SETTINGS),
-                             LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(*out_toggle, accent_color, LV_PART_INDICATOR | LV_STATE_CHECKED);
 
     *out_state_label = lv_label_create(toggle_col);
     lv_obj_set_style_text_font(*out_state_label, &lv_font_montserrat_20, 0);
-    set_toggle_state_caption(*out_state_label, false);
+    lv_obj_set_user_data(*out_state_label, reinterpret_cast<void*>(static_cast<uintptr_t>(lv_color_to_u32(accent_color))));
+    set_toggle_state_caption(*out_state_label, false, accent_color);
 
     lv_obj_add_event_cb(*out_toggle, toggle_state_caption_event_cb, LV_EVENT_VALUE_CHANGED, *out_state_label);
 
