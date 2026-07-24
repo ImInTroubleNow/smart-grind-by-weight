@@ -184,7 +184,8 @@ private:
                                           lv_obj_t **out_toggle, lv_obj_t **out_state_label,
                                           lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS),
                                           const lv_font_t *name_font = &lv_font_montserrat_20);
-    lv_obj_t *create_flat_data_row(lv_obj_t *parent, const char *name, lv_obj_t **value_label, bool with_divider = true);
+    lv_obj_t *create_flat_data_row(lv_obj_t *parent, const char *name, lv_obj_t **value_label, bool with_divider = true,
+                                   const lv_font_t *font = &lv_font_montserrat_24);
     lv_obj_t *create_outline_button(lv_obj_t *parent, const char *text, lv_color_t color, int32_t width_pct = 100);
     lv_obj_t *create_display_slider_row(lv_obj_t *parent, const char *name,
                                         lv_obj_t **value_label, lv_obj_t **slider,

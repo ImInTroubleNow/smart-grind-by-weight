@@ -772,57 +772,62 @@ void MenuScreen::create_diagnostics_page(lv_obj_t* parent) {
     lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_all(parent, 0, 0);
 
     // Enable vertical scrolling
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
-    // Load Cell Status separator
-    create_separator(parent, "Load Cell Status");
+    create_description_label(parent, "Load cell health and grinder response diagnostics.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
 
-    // Status indicator
-    create_data_label(parent, "Status:", &diag_status_label);
+    // Load Cell section
+    create_description_label(parent, "LOAD CELL", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_flat_data_row(parent, "Status", &diag_status_label, false);
+    create_flat_data_row(parent, "Cal. factor", &diag_calibration_factor_label, true);
 
-    // Calibration factor - stacked for long decimal values
-    create_data_label(parent, "Cal. factor:", &diag_calibration_factor_label);
-
-    // Info label (only shown when not calibrated)
+    // Info label (only shown when not calibrated) - kept as a standalone label
+    // (not create_description_label's wrapper) so hiding it leaves no blank gap.
     diag_info_label = lv_label_create(parent);
     lv_label_set_text(diag_info_label, "");
-    lv_obj_set_style_text_font(diag_info_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(diag_info_label, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(diag_info_label, lv_color_hex(THEME_COLOR_WARNING), 0);
-    lv_obj_set_style_margin_top(diag_info_label, 10, 0);
-    lv_obj_set_style_margin_bottom(diag_info_label, 10, 0);
+    lv_obj_set_style_pad_hor(diag_info_label, 10, 0);
+    lv_obj_set_style_margin_top(diag_info_label, 8, 0);
+    lv_obj_set_style_margin_bottom(diag_info_label, 12, 0);
     lv_label_set_long_mode(diag_info_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(diag_info_label, 260);
+    lv_obj_set_width(diag_info_label, 280);
     lv_obj_add_flag(diag_info_label, LV_OBJ_FLAG_HIDDEN); // Hidden by default
 
-    diag_reset_button = create_button(parent, "Reset Diagnostics", lv_color_hex(THEME_COLOR_WARNING));
-    lv_obj_set_style_margin_bottom(diag_reset_button, 10, 0);
+    // Inset wrapper matches the Logs & Data page's Purge/Reset action buttons
+    lv_obj_t* reset_wrapper = lv_obj_create(parent);
+    lv_obj_set_size(reset_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(reset_wrapper, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(reset_wrapper, 0, 0);
+    lv_obj_set_style_pad_hor(reset_wrapper, 20, 0);
+    lv_obj_set_style_pad_ver(reset_wrapper, 0, 0);
+    lv_obj_set_style_margin_bottom(reset_wrapper, 18, 0);
+    lv_obj_clear_flag(reset_wrapper, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(reset_wrapper, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(reset_wrapper, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(reset_wrapper, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    diag_reset_button = create_outline_button(reset_wrapper, "Reset Diagnostics", lv_color_hex(THEME_COLOR_WARNING));
 
-    // Noise Floor separator
-    create_separator(parent, "Noise Floor");
+    create_separator(parent, nullptr, LV_OPA_30);
 
-    // Std dev readings (moved from System Info) - stacked for precision values
-    create_data_label(parent, "Std Dev (g):", &diag_std_dev_g_label);
-    create_data_label(parent, "Std Dev (ADC):", &diag_std_dev_adc_label);
-    create_data_label(parent, "Noise level:", &diag_noise_level_label);
+    // Noise Floor section
+    create_description_label(parent, "NOISE FLOOR", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_flat_data_row(parent, "Std Dev (g)", &diag_std_dev_g_label, false, &lv_font_montserrat_20);
+    create_flat_data_row(parent, "Std Dev (ADC)", &diag_std_dev_adc_label, false, &lv_font_montserrat_20);
+    create_flat_data_row(parent, "Noise level", &diag_noise_level_label, false, &lv_font_montserrat_20);
 
-    // Static info label about calibration dependency
-    lv_obj_t* cal_info = lv_label_create(parent);
-    lv_label_set_text(cal_info, "Noise level readings depend on proper calibration.");
-    lv_obj_set_style_text_font(cal_info, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(cal_info, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_margin_top(cal_info, 10, 0);
-    lv_label_set_long_mode(cal_info, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(cal_info, 260);
+    create_description_label(parent, "Noise level readings depend on proper calibration.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
 
-    // Motor Response separator
-    create_separator(parent, "Motor Response");
-
-    // Motor latency
-    create_data_label(parent, "Motor Latency:", &diag_motor_latency_label, true);
+    // Motor Response section
+    create_description_label(parent, "MOTOR RESPONSE", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_flat_data_row(parent, "Motor Latency", &diag_motor_latency_label, false, &lv_font_montserrat_20);
 
     // Register event for the button (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -1432,7 +1437,8 @@ lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name,
     return row;
 }
 
-lv_obj_t* MenuScreen::create_flat_data_row(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool with_divider) {
+lv_obj_t* MenuScreen::create_flat_data_row(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool with_divider,
+                                            const lv_font_t* font) {
     // Same flat row shell as create_flat_toggle_row, but with a right-aligned
     // value label instead of a switch - matches the Logs page's stat rows.
     lv_obj_t* row = lv_obj_create(parent);
@@ -1456,11 +1462,11 @@ lv_obj_t* MenuScreen::create_flat_data_row(lv_obj_t* parent, const char* name, l
 
     lv_obj_t* name_label = lv_label_create(row);
     lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(name_label, font, 0);
     lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
 
     *value_label = lv_label_create(row);
-    lv_obj_set_style_text_font(*value_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(*value_label, font, 0);
     lv_obj_set_style_text_color(*value_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
 
     return row;
