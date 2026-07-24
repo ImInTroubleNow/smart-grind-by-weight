@@ -133,6 +133,11 @@ void MenuScreen::create_menu_ui() {
     lv_obj_set_style_text_font(back_chevron, &lv_font_montserrat_32, 0);
     lv_obj_set_style_text_color(back_chevron, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
     lv_obj_align(back_chevron, LV_ALIGN_TOP_LEFT, 8, 2 - title_padding);
+    // Corner buttons are where capacitive touch panels are least accurate and
+    // where thumbs tend to overshoot; widen the invisible hit area well past
+    // the visual icon so near-misses still register (same pattern used for
+    // the toggle/slider controls elsewhere on this screen).
+    lv_obj_set_ext_click_area(back_chevron, 20);
 
     // Root page starts on "Menu" (closes the menu), so start the icon as "X"
     lv_obj_t* back_icon = lv_obj_get_child(back_chevron, 0);

@@ -46,6 +46,11 @@ void ReadyScreen::create(ProfileController* profile_controller) {
     lv_obj_set_style_bg_opa(menu_icon_button, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(menu_icon_button, 0, 0);
     lv_obj_set_style_shadow_width(menu_icon_button, 0, 0);
+    // Corner buttons are where capacitive touch panels are least accurate and
+    // where thumbs tend to overshoot; widen the invisible hit area well past
+    // the visual icon so near-misses still register (same pattern used for
+    // the toggle/slider controls in menu_screen.cpp).
+    lv_obj_set_ext_click_area(menu_icon_button, 20);
     lv_obj_move_foreground(menu_icon_button);
 
     lv_obj_t* menu_icon = lv_label_create(menu_icon_button);
