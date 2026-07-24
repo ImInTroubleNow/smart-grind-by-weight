@@ -599,7 +599,7 @@ void MenuScreen::create_grind_type_page(lv_obj_t* parent) {
     lv_obj_set_size(grind_mode_swipe_toggle, 50, 26);
     lv_obj_set_ext_click_area(grind_mode_swipe_toggle, 20);
     lv_obj_set_style_bg_color(grind_mode_swipe_toggle, lv_color_hex(THEME_COLOR_MENU_GENERAL),
-                             LV_PART_INDICATOR | LV_STATE_CHECKED);
+                             (lv_style_selector_t)LV_PART_INDICATOR | LV_STATE_CHECKED);
 
     grind_mode_swipe_state_label = lv_label_create(swipe_col);
     lv_obj_set_style_text_font(grind_mode_swipe_state_label, &lv_font_montserrat_20, 0);
@@ -1133,13 +1133,13 @@ void MenuScreen::update_brightness_sliders() {
 
 void MenuScreen::update_brightness_labels(int normal_percent, int screensaver_percent) {
     if (brightness_normal_label && normal_percent >= 0) {
-        char normal_text[8];
+        char normal_text[16];
         snprintf(normal_text, sizeof(normal_text), "%d%%", normal_percent);
         lv_label_set_text(brightness_normal_label, normal_text);
     }
 
     if (brightness_screensaver_label && screensaver_percent >= 0) {
-        char screensaver_text[8];
+        char screensaver_text[16];
         snprintf(screensaver_text, sizeof(screensaver_text), "%d%%", screensaver_percent);
         lv_label_set_text(brightness_screensaver_label, screensaver_text);
     }
@@ -1459,7 +1459,7 @@ lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name,
     *out_toggle = lv_switch_create(toggle_col);
     lv_obj_set_size(*out_toggle, 50, 26);
     lv_obj_set_ext_click_area(*out_toggle, kToggleClickExtension);
-    lv_obj_set_style_bg_color(*out_toggle, accent_color, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(*out_toggle, accent_color, (lv_style_selector_t)LV_PART_INDICATOR | LV_STATE_CHECKED);
 
     lv_obj_t* state_label = lv_label_create(toggle_col);
     lv_obj_set_style_text_font(state_label, &lv_font_montserrat_20, 0);
@@ -1621,7 +1621,7 @@ lv_obj_t* MenuScreen::create_flat_toggle_desc_row(lv_obj_t* parent, const char* 
     *out_toggle = lv_switch_create(toggle_col);
     lv_obj_set_size(*out_toggle, 50, 26);
     lv_obj_set_ext_click_area(*out_toggle, kToggleClickExtension);
-    lv_obj_set_style_bg_color(*out_toggle, accent_color, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(*out_toggle, accent_color, (lv_style_selector_t)LV_PART_INDICATOR | LV_STATE_CHECKED);
 
     *out_state_label = lv_label_create(toggle_col);
     lv_obj_set_style_text_font(*out_state_label, &lv_font_montserrat_20, 0);
