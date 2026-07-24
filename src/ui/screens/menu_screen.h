@@ -62,13 +62,16 @@ private:
     lv_obj_t* reset_button;
     
     // Modes tab elements
-    lv_obj_t* profile_style_drip_button;
-    lv_obj_t* profile_style_espresso_button;
-    lv_obj_t* grind_type_weight_button;
-    lv_obj_t* grind_type_time_only_button;
+    lv_obj_t* profile_style_drip_row;
+    lv_obj_t* profile_style_drip_dot;
+    lv_obj_t* profile_style_espresso_row;
+    lv_obj_t* profile_style_espresso_dot;
+    lv_obj_t* grind_type_weight_row;
+    lv_obj_t* grind_type_weight_dot;
+    lv_obj_t* grind_type_time_only_row;
+    lv_obj_t* grind_type_time_only_dot;
     lv_obj_t* grind_mode_swipe_toggle;
     lv_obj_t* grind_mode_swipe_row;
-    lv_obj_t* grind_mode_swipe_desc_label;
     lv_obj_t* auto_start_toggle;
     lv_obj_t* auto_return_toggle;
     lv_obj_t* grinder_purge_mode_radio_group;
@@ -107,6 +110,7 @@ private:
 
 public:
     static constexpr float kPurgeSliderScale = 10.0f; // Slider uses 0.1g increments
+    static constexpr int32_t kModeRowIndent = 48; // Matches create_profile_style_row's circle (32) + gap (16)
 
     void create(BluetoothManager* bluetooth, GrindController* grind_ctrl, GrindingScreen* grind_screen, class HardwareManager* hw_mgr, DiagnosticsController* diag_ctrl);
     void show();
@@ -166,7 +170,7 @@ private:
     void create_data_page(lv_obj_t* parent);
     void create_stats_page(lv_obj_t* parent);
     void create_diagnostics_page(lv_obj_t* parent);
-    lv_obj_t* create_separator(lv_obj_t* parent, const char* text = nullptr);
+    lv_obj_t* create_separator(lv_obj_t* parent, const char* text = nullptr, lv_opa_t line_opa = LV_OPA_COVER);
     lv_obj_t* create_section_header(lv_obj_t* parent, const char* text);
     lv_obj_t* create_menu_item(lv_obj_t* parent, const char* text, const char* icon_char, lv_color_t icon_color);
     lv_obj_t *create_toggle_row(lv_obj_t *parent, const char *text,lv_obj_t **out_toggle);
@@ -178,5 +182,10 @@ private:
                                        const char *value);
     lv_obj_t *create_data_label(lv_obj_t *parent, const char *name,
                                 lv_obj_t **variable, bool stacked = false);
-    lv_obj_t *create_description_label(lv_obj_t *parent, const char *text);
+    lv_obj_t *create_description_label(lv_obj_t *parent, const char *text,
+                                       const lv_font_t *font = &lv_font_montserrat_24,
+                                       lv_color_t color = lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
+    lv_obj_t *create_profile_style_row(lv_obj_t *parent, const char *title,
+                                       const char *category_desc, const char *presets_desc,
+                                       lv_obj_t **out_dot); // presets_desc may be nullptr for a single-line description
 };

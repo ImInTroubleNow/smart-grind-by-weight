@@ -438,19 +438,28 @@ void MenuScreen::create_profile_mode_page(lv_obj_t* parent) {
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
-    profile_style_drip_button = create_button(parent, "Drip Coffee", lv_color_hex(THEME_COLOR_PRIMARY), 240, 70, &lv_font_montserrat_24);
-    create_description_label(parent, "Displays profiles for grinding drip coffee.");
+    create_description_label(parent, "Choose how presets are displayed.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
 
-    profile_style_espresso_button = create_button(parent, "Espresso", lv_color_hex(THEME_COLOR_NEUTRAL), 240, 70, &lv_font_montserrat_24);
-    create_description_label(parent, "Displays profiles for grinding espresso.");
+    profile_style_drip_row = create_profile_style_row(parent, "DRIP COFFEE", "Cup-based presets",
+                                                       "2, 4, 6, 8, 10 Cups", &profile_style_drip_dot);
+    create_separator(parent, nullptr, LV_OPA_30);
+
+    profile_style_espresso_row = create_profile_style_row(parent, "ESPRESSO", "Dose-based presets",
+                                                           "Single, Double", &profile_style_espresso_dot);
+    create_separator(parent, nullptr, LV_OPA_30);
+
+    create_description_label(parent, "Changing this only affects the preset pages.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
 
     using ET = EventBridgeLVGL::EventType;
-    if (profile_style_drip_button) {
-        lv_obj_add_event_cb(profile_style_drip_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+    if (profile_style_drip_row) {
+        lv_obj_add_event_cb(profile_style_drip_row, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::PROFILE_STYLE_SELECT_DRIP)));
     }
-    if (profile_style_espresso_button) {
-        lv_obj_add_event_cb(profile_style_espresso_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+    if (profile_style_espresso_row) {
+        lv_obj_add_event_cb(profile_style_espresso_row, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::PROFILE_STYLE_SELECT_ESPRESSO)));
     }
 }
@@ -464,27 +473,65 @@ void MenuScreen::create_grind_type_page(lv_obj_t* parent) {
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
-    // Time Only highlights in accent blue when selected, matching the
-    // start button's accent color while grinding in time mode.
-    grind_type_weight_button = create_button(parent, "Weight & Time", lv_color_hex(THEME_COLOR_PRIMARY), 240, 70, &lv_font_montserrat_24);
-    create_description_label(parent, "Pick between weight or time based grinding.");
+    create_description_label(parent, "Choose how grinding is controlled.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
 
-    // Swipe toggle using existing pattern - hidden while Time Only is locked in,
-    // since there's no weight mode left to swipe to.
-    grind_mode_swipe_row = create_toggle_row(parent, "Swipe", &grind_mode_swipe_toggle);
-    grind_mode_swipe_desc_label = create_description_label(
-        parent, "Swipe up or down to toggle between weight and time grinding.");
+    grind_type_weight_row = create_profile_style_row(parent, "WEIGHT & TIME",
+                                                      "Supports both weight and timed grinding.",
+                                                      nullptr, &grind_type_weight_dot);
 
-    grind_type_time_only_button = create_button(parent, "Time Only", lv_color_hex(THEME_COLOR_NEUTRAL), 240, 70, &lv_font_montserrat_24);
-    create_description_label(parent, "Skips weight calibration and disables weight based grinding.");
+    // Swipe nests inside the Weight & Time row (same indent as its description,
+    // hidden along with it) since the gesture only switches modes within this
+    // style - it has no effect once Time Only is locked in.
+    lv_obj_t* swipe_col = lv_obj_create(grind_type_weight_row);
+    lv_obj_set_size(swipe_col, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(swipe_col, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(swipe_col, 0, 0);
+    lv_obj_set_style_pad_all(swipe_col, 0, 0);
+    lv_obj_set_style_pad_left(swipe_col, kModeRowIndent, 0);
+    lv_obj_set_style_pad_top(swipe_col, 10, 0);
+    lv_obj_clear_flag(swipe_col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(swipe_col, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(swipe_col, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(swipe_col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(swipe_col, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_gap(swipe_col, 6, 0);
+
+    lv_obj_t* swipe_label = lv_label_create(swipe_col);
+    lv_label_set_text(swipe_label, "Swipe Gestures");
+    lv_obj_set_style_text_font(swipe_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(swipe_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    // Switch sits under its header, sized down and recolored to match the
+    // radio dots above instead of the default theme accent.
+    grind_mode_swipe_toggle = lv_switch_create(swipe_col);
+    lv_obj_set_size(grind_mode_swipe_toggle, 50, 26);
+    lv_obj_set_ext_click_area(grind_mode_swipe_toggle, 20);
+    lv_obj_set_style_bg_color(grind_mode_swipe_toggle, lv_color_hex(THEME_COLOR_MENU_GENERAL),
+                             LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    lv_obj_t* swipe_desc = lv_label_create(swipe_col);
+    lv_label_set_text(swipe_desc, "Swipe up or down on the Ready screen to reach time mode.");
+    lv_obj_set_style_text_font(swipe_desc, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(swipe_desc, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+    lv_label_set_long_mode(swipe_desc, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(swipe_desc, LV_PCT(100));
+
+    grind_mode_swipe_row = swipe_col;
+
+    create_separator(parent, nullptr, LV_OPA_30);
+
+    grind_type_time_only_row = create_profile_style_row(parent, "TIME ONLY", "Uses timed grinding only.",
+                                                         "Weight calibration is disabled.", &grind_type_time_only_dot);
 
     using ET = EventBridgeLVGL::EventType;
-    if (grind_type_weight_button) {
-        lv_obj_add_event_cb(grind_type_weight_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+    if (grind_type_weight_row) {
+        lv_obj_add_event_cb(grind_type_weight_row, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_MODE_SELECT_WEIGHT_TIME)));
     }
-    if (grind_type_time_only_button) {
-        lv_obj_add_event_cb(grind_type_time_only_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+    if (grind_type_time_only_row) {
+        lv_obj_add_event_cb(grind_type_time_only_row, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::GRIND_MODE_SELECT_TIME_ONLY)));
     }
     if (grind_mode_swipe_toggle) {
@@ -994,7 +1041,7 @@ void MenuScreen::update_auto_dim_timeout_label(int seconds) {
     }
 }
 
-lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text) {
+lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text, lv_opa_t line_opa) {
     // Create separator container
     lv_obj_t* separator_container = lv_obj_create(parent);
     lv_obj_set_size(separator_container, LV_PCT(100), LV_SIZE_CONTENT);
@@ -1010,6 +1057,7 @@ lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text) {
     lv_obj_set_size(left_line, LV_SIZE_CONTENT, 2);
     lv_obj_set_flex_grow(left_line, 1);
     lv_obj_set_style_bg_color(left_line, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_bg_opa(left_line, line_opa, 0);
     lv_obj_set_style_border_width(left_line, 0, 0);
 
     if (!text) {
@@ -1030,6 +1078,7 @@ lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text) {
     lv_obj_set_size(right_line, LV_SIZE_CONTENT, 2);
     lv_obj_set_flex_grow(right_line, 1);
     lv_obj_set_style_bg_color(right_line, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_bg_opa(right_line, line_opa, 0);
     lv_obj_set_style_border_width(right_line, 0, 0);
 
     return separator_container;
@@ -1199,7 +1248,8 @@ lv_obj_t* MenuScreen::create_data_label(lv_obj_t* parent, const char* name, lv_o
     return ::create_data_label(parent, name, variable, stacked);
 }
 
-lv_obj_t* MenuScreen::create_description_label(lv_obj_t* parent, const char* text) {
+lv_obj_t* MenuScreen::create_description_label(lv_obj_t* parent, const char* text,
+                                                const lv_font_t* font, lv_color_t color) {
     // Create container with padding (similar to create_data_label)
     lv_obj_t* container = lv_obj_create(parent);
     lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
@@ -1215,12 +1265,106 @@ lv_obj_t* MenuScreen::create_description_label(lv_obj_t* parent, const char* tex
     // Create label inside container
     lv_obj_t* label = lv_label_create(container);
     lv_label_set_text(label, text);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_text_font(label, font, 0);
+    lv_obj_set_style_text_color(label, color, 0);
     lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(label, LV_PCT(100));
 
     return label;
+}
+
+lv_obj_t* MenuScreen::create_profile_style_row(lv_obj_t* parent, const char* title,
+                                               const char* category_desc, const char* presets_desc,
+                                               lv_obj_t** out_dot) {
+    constexpr int32_t kCircleOuter = 32;
+    constexpr int32_t kCircleGap = kModeRowIndent - kCircleOuter;
+
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row, 0, 0);
+    lv_obj_set_style_pad_hor(row, 10, 0);
+    lv_obj_set_style_pad_ver(row, 14, 0);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(row, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_gap(row, 6, 0);
+
+    // Top line: radio circle + title
+    lv_obj_t* top = lv_obj_create(row);
+    lv_obj_set_size(top, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(top, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(top, 0, 0);
+    lv_obj_set_style_pad_all(top, 0, 0);
+    lv_obj_clear_flag(top, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(top, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(top, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(top, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(top, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(top, kCircleGap, 0);
+
+    lv_obj_t* circle = lv_obj_create(top);
+    lv_obj_set_size(circle, kCircleOuter, kCircleOuter);
+    lv_obj_set_style_radius(circle, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(circle, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(circle, 3, 0);
+    lv_obj_set_style_border_color(circle, lv_color_hex(THEME_COLOR_MENU_GENERAL), 0);
+    lv_obj_clear_flag(circle, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(circle, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t* dot = lv_obj_create(top);
+    lv_obj_add_flag(dot, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_size(dot, kCircleOuter / 2, kCircleOuter / 2);
+    lv_obj_align_to(dot, circle, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(dot, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(dot, lv_color_hex(THEME_COLOR_MENU_GENERAL), 0);
+    lv_obj_set_style_border_width(dot, 0, 0);
+    lv_obj_clear_flag(dot, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(dot, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t* title_label = lv_label_create(top);
+    lv_label_set_text(title_label, title);
+    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(title_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    // Description lines, indented to align under the title
+    lv_obj_t* desc_col = lv_obj_create(row);
+    lv_obj_set_size(desc_col, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(desc_col, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(desc_col, 0, 0);
+    lv_obj_set_style_pad_all(desc_col, 0, 0);
+    lv_obj_set_style_pad_left(desc_col, kCircleOuter + kCircleGap, 0);
+    lv_obj_clear_flag(desc_col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(desc_col, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(desc_col, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(desc_col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(desc_col, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_gap(desc_col, 8, 0);
+
+    lv_obj_t* category_label = lv_label_create(desc_col);
+    lv_label_set_text(category_label, category_desc);
+    lv_obj_set_style_text_font(category_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(category_label, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+    lv_label_set_long_mode(category_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(category_label, LV_PCT(100));
+
+    if (presets_desc) {
+        lv_obj_t* presets_label = lv_label_create(desc_col);
+        lv_label_set_text(presets_label, presets_desc);
+        lv_obj_set_style_text_font(presets_label, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_text_color(presets_label, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+        lv_label_set_long_mode(presets_label, LV_LABEL_LONG_WRAP);
+        lv_obj_set_width(presets_label, LV_PCT(100));
+    }
+
+    if (out_dot) {
+        *out_dot = dot;
+    }
+
+    return row;
 }
 
 void MenuScreen::reset_scale_display() {
@@ -1239,24 +1383,36 @@ void MenuScreen::update_scale_weight(float weight) {
 }
 
 void MenuScreen::sync_profile_style_buttons(bool espresso_selected) {
-    if (profile_style_drip_button) {
-        lv_obj_set_style_bg_color(profile_style_drip_button,
-            lv_color_hex(espresso_selected ? THEME_COLOR_NEUTRAL : THEME_COLOR_PRIMARY), 0);
+    if (profile_style_drip_dot) {
+        if (espresso_selected) {
+            lv_obj_add_flag(profile_style_drip_dot, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(profile_style_drip_dot, LV_OBJ_FLAG_HIDDEN);
+        }
     }
-    if (profile_style_espresso_button) {
-        lv_obj_set_style_bg_color(profile_style_espresso_button,
-            lv_color_hex(espresso_selected ? THEME_COLOR_PRIMARY : THEME_COLOR_NEUTRAL), 0);
+    if (profile_style_espresso_dot) {
+        if (espresso_selected) {
+            lv_obj_clear_flag(profile_style_espresso_dot, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(profile_style_espresso_dot, LV_OBJ_FLAG_HIDDEN);
+        }
     }
 }
 
 void MenuScreen::sync_grind_type_buttons(bool time_only) {
-    if (grind_type_weight_button) {
-        lv_obj_set_style_bg_color(grind_type_weight_button,
-            lv_color_hex(time_only ? THEME_COLOR_NEUTRAL : THEME_COLOR_PRIMARY), 0);
+    if (grind_type_weight_dot) {
+        if (time_only) {
+            lv_obj_add_flag(grind_type_weight_dot, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(grind_type_weight_dot, LV_OBJ_FLAG_HIDDEN);
+        }
     }
-    if (grind_type_time_only_button) {
-        lv_obj_set_style_bg_color(grind_type_time_only_button,
-            lv_color_hex(time_only ? THEME_COLOR_ACCENT : THEME_COLOR_NEUTRAL), 0);
+    if (grind_type_time_only_dot) {
+        if (time_only) {
+            lv_obj_clear_flag(grind_type_time_only_dot, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(grind_type_time_only_dot, LV_OBJ_FLAG_HIDDEN);
+        }
     }
     set_swipe_row_visible(!time_only);
 }
@@ -1367,13 +1523,6 @@ void MenuScreen::set_swipe_row_visible(bool visible) {
             lv_obj_clear_flag(grind_mode_swipe_row, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_add_flag(grind_mode_swipe_row, LV_OBJ_FLAG_HIDDEN);
-        }
-    }
-    if (grind_mode_swipe_desc_label) {
-        if (visible) {
-            lv_obj_clear_flag(grind_mode_swipe_desc_label, LV_OBJ_FLAG_HIDDEN);
-        } else {
-            lv_obj_add_flag(grind_mode_swipe_desc_label, LV_OBJ_FLAG_HIDDEN);
         }
     }
 }
