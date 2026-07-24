@@ -49,7 +49,9 @@ private:
     
     // Menu toggle elements
     lv_obj_t* ble_toggle;
+    lv_obj_t* ble_state_label;
     lv_obj_t* ble_startup_toggle;
+    lv_obj_t* ble_startup_state_label;
     lv_obj_t* ble_status_section;
     lv_obj_t* ble_status_label;
     lv_obj_t* ble_timer_label;
@@ -74,6 +76,7 @@ private:
     lv_obj_t* grind_type_time_only_row;
     lv_obj_t* grind_type_time_only_dot;
     lv_obj_t* grind_mode_swipe_toggle;
+    lv_obj_t* grind_mode_swipe_state_label;
     lv_obj_t* grind_mode_swipe_row;
     lv_obj_t* auto_start_toggle;
     lv_obj_t* auto_start_state_label;
@@ -179,7 +182,9 @@ private:
     lv_obj_t* create_section_header(lv_obj_t* parent, const char* text);
     lv_obj_t* create_menu_item(lv_obj_t* parent, const char* text, const char* icon_char, lv_color_t icon_color);
     lv_obj_t *create_toggle_row(lv_obj_t *parent, const char *text,lv_obj_t **out_toggle);
-    lv_obj_t *create_flat_toggle_row(lv_obj_t *parent, const char *name, lv_obj_t **out_toggle, bool with_divider = true);
+    lv_obj_t *create_flat_toggle_row(lv_obj_t *parent, const char *name, lv_obj_t **out_toggle, bool with_divider = true,
+                                     lv_obj_t **out_state_label = nullptr,
+                                     lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS));
     lv_obj_t *create_flat_toggle_desc_row(lv_obj_t *parent, const char *name, const char *description,
                                           lv_obj_t **out_toggle, lv_obj_t **out_state_label,
                                           lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS),

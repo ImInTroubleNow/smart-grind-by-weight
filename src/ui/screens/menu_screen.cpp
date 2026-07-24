@@ -12,9 +12,11 @@
 #include "../fonts/custom_icons.h"
 
 // Defined further below, alongside the other flat-toggle-row helpers; forward
-// declared here so update_logging_toggle() can sync the caption on load.
+// declared here so update_logging_toggle() and create_flat_toggle_row() can use them
+// before their definitions later in the file.
 static void set_toggle_state_caption(lv_obj_t* state_label, bool checked,
                                      lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS));
+static void toggle_state_caption_event_cb(lv_event_t* e);
 
 static void back_event_handler(lv_event_t * e)
 {
@@ -338,7 +340,7 @@ void MenuScreen::create_bluetooth_page(lv_obj_t* parent) {
     create_description_label(parent, "Configure Bluetooth connectivity and behavior.",
                             &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
 
-    create_flat_toggle_row(parent, "ENABLE", &ble_toggle, false);
+    create_flat_toggle_row(parent, "ENABLE", &ble_toggle, false, &ble_state_label);
 
     // Advertising status, nested under Enable since it only applies while BLE is on.
     // Carries the hairline divider itself so the whole block sits above one line.
@@ -378,7 +380,7 @@ void MenuScreen::create_bluetooth_page(lv_obj_t* parent) {
     lv_obj_set_style_text_color(ble_timer_label, lv_color_hex(THEME_COLOR_WARNING), 0);
     lv_obj_clear_flag(ble_timer_label, LV_OBJ_FLAG_SCROLLABLE);
 
-    create_flat_toggle_row(parent, "STARTUP", &ble_startup_toggle);
+    create_flat_toggle_row(parent, "STARTUP", &ble_startup_toggle, true, &ble_startup_state_label);
 
     // Register events for the toggles (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -598,6 +600,14 @@ void MenuScreen::create_grind_type_page(lv_obj_t* parent) {
     lv_obj_set_ext_click_area(grind_mode_swipe_toggle, 20);
     lv_obj_set_style_bg_color(grind_mode_swipe_toggle, lv_color_hex(THEME_COLOR_MENU_GENERAL),
                              LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    grind_mode_swipe_state_label = lv_label_create(swipe_col);
+    lv_obj_set_style_text_font(grind_mode_swipe_state_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_user_data(grind_mode_swipe_state_label,
+                        reinterpret_cast<void*>(static_cast<uintptr_t>(THEME_COLOR_MENU_GENERAL)));
+    set_toggle_state_caption(grind_mode_swipe_state_label, false, lv_color_hex(THEME_COLOR_MENU_GENERAL));
+    lv_obj_add_event_cb(grind_mode_swipe_toggle, toggle_state_caption_event_cb, LV_EVENT_VALUE_CHANGED,
+                       grind_mode_swipe_state_label);
 
     lv_obj_t* swipe_desc = lv_label_create(swipe_col);
     lv_label_set_text(swipe_desc, "Swipe up or down on the Ready screen to reach time mode.");
@@ -967,7 +977,8 @@ void MenuScreen::update_ble_status() {
     } else {
         lv_obj_clear_state(ble_toggle, LV_STATE_CHECKED);
     }
-    
+    set_toggle_state_caption(ble_state_label, bluetooth_manager->is_enabled());
+
     // Update status text
     if (bluetooth_manager->is_enabled()) {
         if (bluetooth_manager->is_connected()) {
@@ -1243,6 +1254,7 @@ void MenuScreen::update_bluetooth_startup_toggle() {
     } else {
         lv_obj_clear_state(ble_startup_toggle, LV_STATE_CHECKED);
     }
+    set_toggle_state_caption(ble_startup_state_label, startup_enabled);
 }
 
 void MenuScreen::update_logging_toggle() {
@@ -1404,9 +1416,10 @@ lv_obj_t* MenuScreen::create_display_slider_row(lv_obj_t* parent, const char* na
     return row;
 }
 
-lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name, lv_obj_t** out_toggle, bool with_divider) {
-    // Flat row: caps name on the left, small purple-accent switch on the right,
-    // bottom hairline divider - matches the Display page's flat row style.
+lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name, lv_obj_t** out_toggle, bool with_divider,
+                                              lv_obj_t** out_state_label, lv_color_t accent_color) {
+    // Flat row: caps name on the left, small purple-accent switch + ON/OFF caption
+    // on the right, bottom hairline divider - matches the Display page's flat row style.
     lv_obj_t* row = lv_obj_create(parent);
     lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
@@ -1428,11 +1441,35 @@ lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name,
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
     lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
 
-    *out_toggle = lv_switch_create(row);
+    // Switch + ON/OFF caption stacked in their own column, same as create_flat_toggle_desc_row,
+    // so the caption doesn't get squeezed by the space-between row layout.
+    constexpr int32_t kToggleClickExtension = 35;
+    lv_obj_t* toggle_col = lv_obj_create(row);
+    lv_obj_set_size(toggle_col, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(toggle_col, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(toggle_col, 0, 0);
+    lv_obj_set_style_pad_all(toggle_col, 0, 0);
+    lv_obj_set_ext_click_area(toggle_col, kToggleClickExtension);
+    lv_obj_clear_flag(toggle_col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(toggle_col, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(toggle_col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(toggle_col, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(toggle_col, 4, 0);
+
+    *out_toggle = lv_switch_create(toggle_col);
     lv_obj_set_size(*out_toggle, 50, 26);
-    lv_obj_set_ext_click_area(*out_toggle, 20);
-    lv_obj_set_style_bg_color(*out_toggle, lv_color_hex(THEME_COLOR_MENU_SETTINGS),
-                             LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_ext_click_area(*out_toggle, kToggleClickExtension);
+    lv_obj_set_style_bg_color(*out_toggle, accent_color, LV_PART_INDICATOR | LV_STATE_CHECKED);
+
+    lv_obj_t* state_label = lv_label_create(toggle_col);
+    lv_obj_set_style_text_font(state_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_user_data(state_label, reinterpret_cast<void*>(static_cast<uintptr_t>(lv_color_to_u32(accent_color))));
+    set_toggle_state_caption(state_label, false, accent_color);
+    lv_obj_add_event_cb(*out_toggle, toggle_state_caption_event_cb, LV_EVENT_VALUE_CHANGED, state_label);
+
+    if (out_state_label) {
+        *out_state_label = state_label;
+    }
 
     return row;
 }
@@ -1807,6 +1844,7 @@ void MenuScreen::update_grind_mode_toggles() {
             lv_obj_clear_state(grind_mode_swipe_toggle, LV_STATE_CHECKED);
         }
     }
+    set_toggle_state_caption(grind_mode_swipe_state_label, swipe_enabled, lv_color_hex(THEME_COLOR_MENU_GENERAL));
 
     // Auto actions toggles (defaults disabled)
     Preferences auto_prefs;
