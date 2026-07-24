@@ -367,10 +367,13 @@ void MenuScreen::create_display_page(lv_obj_t* parent) {
     lv_obj_set_scroll_dir(parent, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
 
-    create_slider_row(parent, "Brightness", &brightness_normal_label, &brightness_normal_slider);
-    create_slider_row(parent, "Screensaver", &brightness_screensaver_label, &brightness_screensaver_slider, lv_color_hex(THEME_COLOR_WARNING));
+    create_description_label(parent, "Configure display brightness and behavior.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+
+    create_display_slider_row(parent, "BRIGHTNESS", &brightness_normal_label, &brightness_normal_slider);
+    create_display_slider_row(parent, "DIMMED", &brightness_screensaver_label, &brightness_screensaver_slider);
     // Auto-Dim: 18 raw positions (0-17) map to 5-90 seconds in 5-second steps.
-    create_slider_row(parent, "Auto-Dim", &auto_dim_timeout_label, &auto_dim_timeout_slider, lv_color_hex(THEME_COLOR_SUCCESS), 0, 17);
+    create_display_slider_row(parent, "AUTO-DIM", &auto_dim_timeout_label, &auto_dim_timeout_slider, 0, 17);
 
     // Register events for the sliders (done here because widgets are created lazily)
     using ET = EventBridgeLVGL::EventType;
@@ -1041,14 +1044,14 @@ void MenuScreen::update_brightness_sliders() {
 
 void MenuScreen::update_brightness_labels(int normal_percent, int screensaver_percent) {
     if (brightness_normal_label && normal_percent >= 0) {
-        char normal_text[32];
-        snprintf(normal_text, sizeof(normal_text), "Brightness: %d%%", normal_percent);
+        char normal_text[8];
+        snprintf(normal_text, sizeof(normal_text), "%d%%", normal_percent);
         lv_label_set_text(brightness_normal_label, normal_text);
     }
 
     if (brightness_screensaver_label && screensaver_percent >= 0) {
-        char screensaver_text[32];
-        snprintf(screensaver_text, sizeof(screensaver_text), "Dimmed: %d%%", screensaver_percent);
+        char screensaver_text[8];
+        snprintf(screensaver_text, sizeof(screensaver_text), "%d%%", screensaver_percent);
         lv_label_set_text(brightness_screensaver_label, screensaver_text);
     }
 }
@@ -1078,8 +1081,8 @@ void MenuScreen::update_grind_freshness_hours_label(float hours) {
 
 void MenuScreen::update_auto_dim_timeout_label(int seconds) {
     if (auto_dim_timeout_label) {
-        char buffer[24];
-        snprintf(buffer, sizeof(buffer), "Auto-Dim: %ds", seconds);
+        char buffer[8];
+        snprintf(buffer, sizeof(buffer), "%ds", seconds);
         lv_label_set_text(auto_dim_timeout_label, buffer);
     }
 }
@@ -1278,6 +1281,64 @@ lv_obj_t* MenuScreen::create_slider_row(lv_obj_t* parent, const char* text, lv_o
     lv_obj_set_style_bg_color(*slider, slider_color, LV_PART_INDICATOR);
     lv_obj_set_style_bg_opa(*slider, LV_OPA_TRANSP, LV_PART_KNOB);
     return row_container;
+}
+
+lv_obj_t* MenuScreen::create_display_slider_row(lv_obj_t* parent, const char* name,
+                                                 lv_obj_t** value_label, lv_obj_t** slider,
+                                                 uint32_t min, uint32_t max) {
+    // Flat row: name + value on one line, full-width slider below, bottom hairline divider
+    lv_obj_t* row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_radius(row, 0, 0);
+    lv_obj_set_style_border_width(row, 1, 0);
+    lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_color(row, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_border_opa(row, LV_OPA_30, 0);
+    lv_obj_set_style_pad_hor(row, 10, 0);
+    lv_obj_set_style_pad_top(row, 14, 0);
+    lv_obj_set_style_pad_bottom(row, 18, 0);
+    lv_obj_set_style_pad_gap(row, 14, 0);
+    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+
+    // Header sub-row: name on the left, value on the right
+    lv_obj_t* header = lv_obj_create(row);
+    lv_obj_set_size(header, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(header, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(header, 0, 0);
+    lv_obj_set_style_pad_all(header, 0, 0);
+    lv_obj_set_layout(header, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(header, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t* name_label = lv_label_create(header);
+    lv_label_set_text(name_label, name);
+    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
+
+    *value_label = lv_label_create(header);
+    lv_obj_set_style_text_font(*value_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(*value_label, lv_color_hex(THEME_COLOR_MENU_SETTINGS), 0);
+
+    *slider = lv_slider_create(row);
+    lv_obj_set_size(*slider, LV_PCT(100), 8);
+    lv_obj_set_ext_click_area(*slider, 30);
+    lv_slider_set_range(*slider, min, max);
+    lv_obj_set_style_radius(*slider, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(*slider, lv_color_hex(THEME_COLOR_NEUTRAL), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(*slider, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(*slider, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(*slider, lv_color_hex(THEME_COLOR_MENU_SETTINGS), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(*slider, LV_RADIUS_CIRCLE, LV_PART_KNOB);
+    lv_obj_set_style_bg_color(*slider, lv_color_hex(THEME_COLOR_MENU_SETTINGS), LV_PART_KNOB);
+    lv_obj_set_style_bg_opa(*slider, LV_OPA_COVER, LV_PART_KNOB);
+    lv_obj_set_style_pad_all(*slider, 8, LV_PART_KNOB);
+
+    return row;
 }
 
 lv_obj_t* MenuScreen::create_static_data_label(lv_obj_t* parent, const char* name, const char* value) {
