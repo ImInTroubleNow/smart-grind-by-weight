@@ -133,19 +133,7 @@ void MenuUIController::handle_purge() {
 }
 
 void MenuUIController::handle_motor_test() {
-    if (!ui_manager_) return;
-
-    ui_manager_->show_confirmation(
-        "MOTOR TEST",
-        "Motor will be engaged for 1 second."
-        "\n\n"
-        "Make sure grinder is safe to run.",
-        "RUN",
-        lv_color_hex(THEME_COLOR_SUCCESS),
-        [this]() { run_motor_test(); },
-        "CANCEL",
-        [this]() { return_to_menu(); }
-    );
+    run_motor_test();
 }
 
 void MenuUIController::handle_scale_open() {
@@ -814,6 +802,7 @@ void MenuUIController::motor_timer_cb(lv_timer_t* timer) {
     stop_motor_timer();
     ui_manager_->set_background_active(false);
     return_to_menu();
+    ui_manager_->menu_screen.show_main_page();
 }
 
 void MenuUIController::static_motor_timer_cb(lv_timer_t* timer) {

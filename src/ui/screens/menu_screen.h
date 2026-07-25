@@ -23,6 +23,7 @@ private:
     lv_obj_t* stats_page;
     lv_obj_t* diagnostics_page;
     lv_obj_t* scale_page;
+    lv_obj_t* motor_test_page;
 
     // Info tab elements
     lv_obj_t* info_label;
@@ -92,6 +93,7 @@ private:
     lv_obj_t* scale_item;
     lv_obj_t* cal_button;
     lv_obj_t* motor_test_button;
+    lv_obj_t* motor_test_run_button;
     lv_obj_t* autotune_button;
     lv_obj_t* scale_weight_label;
     lv_obj_t* scale_tare_button;
@@ -123,6 +125,7 @@ public:
     void create(BluetoothManager* bluetooth, GrindController* grind_ctrl, GrindingScreen* grind_screen, class HardwareManager* hw_mgr, DiagnosticsController* diag_ctrl);
     void show();
     void hide();
+    void show_main_page();
     void update_info(const WeightSensor* weight_sensor, unsigned long uptime_ms, size_t free_heap);
     void update_diagnostics(WeightSensor* weight_sensor);
     void update_ble_status();
@@ -175,6 +178,7 @@ private:
     void create_profile_mode_page(lv_obj_t* parent);
     void create_grind_type_page(lv_obj_t* parent);
     void create_scale_page(lv_obj_t* parent);
+    void create_motor_test_page(lv_obj_t* parent);
     void create_data_page(lv_obj_t* parent);
     void create_stats_page(lv_obj_t* parent);
     void create_diagnostics_page(lv_obj_t* parent);

@@ -183,6 +183,9 @@ void MenuScreen::create_menu_ui() {
     scale_page = lv_menu_page_create(menu, "Scale");
     create_scale_page(scale_page);
 
+    motor_test_page = lv_menu_page_create(menu, "Motor Test");
+    create_motor_test_page(motor_test_page);
+
     data_page = lv_menu_page_create(menu, "Logs");
     create_data_page(data_page);
 
@@ -214,6 +217,7 @@ void MenuScreen::create_menu_ui() {
     motor_test_button = create_menu_item(main_page, "MOTOR TEST", ICON_MOTOR, calibration_color);
 
     lv_menu_set_load_page_event(menu, scale_item, scale_page);
+    lv_menu_set_load_page_event(menu, motor_test_button, motor_test_page);
 
     lv_obj_add_flag(scale_item, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_flag(cal_button, LV_OBJ_FLAG_CLICKABLE);
@@ -228,10 +232,6 @@ void MenuScreen::create_menu_ui() {
     if (autotune_button) {
         lv_obj_add_event_cb(autotune_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::MENU_AUTOTUNE)));
-    }
-    if (motor_test_button) {
-        lv_obj_add_event_cb(motor_test_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
-                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::MENU_MOTOR_TEST)));
     }
 
     create_section_header(main_page, "SETTINGS");
@@ -654,7 +654,7 @@ void MenuScreen::create_scale_page(lv_obj_t* parent) {
 
     scale_weight_label = lv_label_create(parent);
     lv_label_set_text(scale_weight_label, "0.0g");
-    lv_obj_set_style_text_font(scale_weight_label, &lv_font_montserrat_56, 0);
+    lv_obj_set_style_text_font(scale_weight_label, &lv_font_montserrat_60, 0);
     lv_obj_set_style_text_color(scale_weight_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
     lv_obj_set_style_text_align(scale_weight_label, LV_TEXT_ALIGN_CENTER, 0);
 
@@ -664,11 +664,90 @@ void MenuScreen::create_scale_page(lv_obj_t* parent) {
     lv_obj_set_style_border_width(spacer, 0, 0);
     lv_obj_set_flex_grow(spacer, 1);
 
-    scale_tare_button = create_button(parent, "TARE", lv_color_hex(THEME_COLOR_PRIMARY), 260, 80, &lv_font_montserrat_28);
+    // Matches the Motor Test page's RUN button: 52px tall, montserrat_24, filled amber.
+    scale_tare_button = create_button(parent, "TARE", lv_color_hex(THEME_COLOR_MENU_CALIBRATION), LV_PCT(100), 52, &lv_font_montserrat_24);
+    lv_obj_set_style_text_color(scale_tare_button, lv_color_hex(THEME_COLOR_BACKGROUND), 0);
     using ET = EventBridgeLVGL::EventType;
     if (scale_tare_button) {
         lv_obj_add_event_cb(scale_tare_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
                            reinterpret_cast<void*>(static_cast<intptr_t>(ET::MENU_SCALE_TARE)));
+    }
+}
+
+void MenuScreen::create_motor_test_page(lv_obj_t* parent) {
+    lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_set_scroll_dir(parent, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(parent, LV_SCROLLBAR_MODE_AUTO);
+
+    create_description_label(parent, "Initiate motor test.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_NEUTRAL));
+    create_separator(parent, nullptr, LV_OPA_30);
+
+    // Test Precautions section
+    create_description_label(parent, "TEST PRECAUTIONS", &lv_font_montserrat_24, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+
+    // Precaution row: warning icon beside wrapped description text, matching
+    // the 280px content width used by the other description labels on this page.
+    lv_obj_t* precaution_row = lv_obj_create(parent);
+    lv_obj_set_size(precaution_row, 280, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(precaution_row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(precaution_row, 0, 0);
+    lv_obj_set_style_pad_hor(precaution_row, 10, 0);
+    lv_obj_set_style_pad_ver(precaution_row, 0, 0);
+    lv_obj_set_style_pad_gap(precaution_row, 12, 0);
+    lv_obj_set_style_margin_bottom(precaution_row, 12, 0);
+    lv_obj_clear_flag(precaution_row, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(precaution_row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(precaution_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(precaution_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+
+    lv_obj_t* precaution_icon = lv_label_create(precaution_row);
+    lv_label_set_text(precaution_icon, LV_SYMBOL_WARNING);
+    lv_obj_set_style_text_font(precaution_icon, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(precaution_icon, lv_color_hex(THEME_COLOR_WARNING), 0);
+
+    lv_obj_t* precaution_text = lv_label_create(precaution_row);
+    lv_label_set_text(precaution_text, "Ensure chamber is clear.");
+    lv_obj_set_style_text_font(precaution_text, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(precaution_text, lv_color_hex(THEME_COLOR_NEUTRAL), 0);
+    lv_label_set_long_mode(precaution_text, LV_LABEL_LONG_WRAP);
+    lv_obj_set_flex_grow(precaution_text, 1);
+
+    create_description_label(parent, "Motor will run for 1s.",
+                            &lv_font_montserrat_20, lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
+    create_separator(parent, nullptr, LV_OPA_30);
+
+    // Spacer pushes the RUN button toward the bottom of the page, matching the Scale page.
+    lv_obj_t* spacer = lv_obj_create(parent);
+    lv_obj_set_size(spacer, LV_PCT(100), 0);
+    lv_obj_set_style_bg_opa(spacer, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(spacer, 0, 0);
+    lv_obj_set_flex_grow(spacer, 1);
+
+    // Inset wrapper matches the Logs & Data / Monitor pages' action buttons,
+    // clearing the page's scrollbar instead of colliding with it.
+    lv_obj_t* run_wrapper = lv_obj_create(parent);
+    lv_obj_set_size(run_wrapper, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(run_wrapper, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(run_wrapper, 0, 0);
+    lv_obj_set_style_pad_hor(run_wrapper, 20, 0);
+    lv_obj_set_style_pad_ver(run_wrapper, 0, 0);
+    lv_obj_set_style_margin_bottom(run_wrapper, 18, 0);
+    lv_obj_clear_flag(run_wrapper, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(run_wrapper, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(run_wrapper, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(run_wrapper, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    motor_test_run_button = create_button(run_wrapper, "RUN", lv_color_hex(THEME_COLOR_MENU_CALIBRATION), LV_PCT(100), 52, &lv_font_montserrat_24);
+    lv_obj_set_style_text_color(motor_test_run_button, lv_color_hex(THEME_COLOR_BACKGROUND), 0);
+
+    using ET = EventBridgeLVGL::EventType;
+    if (motor_test_run_button) {
+        lv_obj_add_event_cb(motor_test_run_button, EventBridgeLVGL::dispatch_event, LV_EVENT_CLICKED,
+                           reinterpret_cast<void*>(static_cast<intptr_t>(ET::MENU_MOTOR_TEST)));
     }
 }
 
@@ -859,6 +938,12 @@ void MenuScreen::show() {
     update_grind_mode_toggles();
 
     LOG_BLE("[%lums MENU] Menu screen shown successfully\n", millis());
+}
+
+void MenuScreen::show_main_page() {
+    if (menu && main_page) {
+        lv_menu_set_page(menu, main_page);
+    }
 }
 
 void MenuScreen::hide() {
