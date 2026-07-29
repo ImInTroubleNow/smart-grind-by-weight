@@ -102,3 +102,8 @@
 #define SYS_WEIGHT_DISPLAY_FORMAT "%.1fg"                                      // Weight display format string
 #define SYS_RAW_VALUE_FORMAT "%ld"                                             // Raw load cell value format string
 
+//------------------------------------------------------------------------------
+// SYSTEM INFO PAGE
+//------------------------------------------------------------------------------
+#define SYS_MENU_MEMORY_WARNING_THRESHOLD_PCT 85                              // Heap-used % at which the System Info memory bar switches to warning color
+

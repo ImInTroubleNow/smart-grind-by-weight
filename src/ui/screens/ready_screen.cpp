@@ -60,13 +60,26 @@ void ReadyScreen::create(ProfileController* profile_controller) {
     lv_obj_set_style_transform_scale_y(menu_icon, 220, 0);
     lv_obj_center(menu_icon);
 
+    // Top caption ("CUPS"/"DOSE"/"TIME") - lives on 'screen' (not per-tab)
+    // since it reflects the current style/mode, not the individual profile.
+    // Updated by update_top_caption(), called from sync_to_profile_style()
+    // and on every mode toggle.
+    top_caption_label = lv_label_create(screen);
+    lv_label_set_text(top_caption_label, "");
+    lv_obj_set_style_text_font(top_caption_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(top_caption_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_text_letter_space(top_caption_label, 1, 0);
+    lv_obj_align(top_caption_label, LV_ALIGN_TOP_MID, 0, 49);
+    lv_obj_clear_flag(top_caption_label, LV_OBJ_FLAG_CLICKABLE);
+
     // Page-dot indicator - lives directly on the root screen (not inside
-    // 'screen', which only covers the top 80%) so it can sit in the strip
-    // below the grind button. Visibility is managed manually in show()/hide()
-    // since it isn't a child of 'screen'.
+    // 'screen') so it isn't affected by the tabview's own layout, same as
+    // the menu icon. Sits 10px below the bottom of the top caption
+    // (montserrat_24 line height is 27px, so 49 + 27 + 10 = 86). Visibility
+    // is managed manually in show()/hide() since it isn't a child of 'screen'.
     page_dot_row = lv_obj_create(lv_scr_act());
     lv_obj_set_size(page_dot_row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(page_dot_row, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_align(page_dot_row, LV_ALIGN_TOP_MID, 0, 86);
     lv_obj_set_style_bg_opa(page_dot_row, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(page_dot_row, 0, 0);
     lv_obj_set_style_pad_all(page_dot_row, 0, 0);
@@ -133,12 +146,8 @@ void ReadyScreen::sync_to_profile_style(ProfileController* profile_controller) {
             lv_label_set_text(volume_labels[i], has_volume ? volume_text : "");
             if (has_volume) {
                 lv_obj_clear_flag(volume_labels[i], LV_OBJ_FLAG_HIDDEN);
-                if (water_dividers[i]) lv_obj_clear_flag(water_dividers[i], LV_OBJ_FLAG_HIDDEN);
-                if (water_rows[i]) lv_obj_clear_flag(water_rows[i], LV_OBJ_FLAG_HIDDEN);
             } else {
                 lv_obj_add_flag(volume_labels[i], LV_OBJ_FLAG_HIDDEN);
-                if (water_dividers[i]) lv_obj_add_flag(water_dividers[i], LV_OBJ_FLAG_HIDDEN);
-                if (water_rows[i]) lv_obj_add_flag(water_rows[i], LV_OBJ_FLAG_HIDDEN);
             }
         }
 
@@ -147,119 +156,100 @@ void ReadyScreen::sync_to_profile_style(ProfileController* profile_controller) {
             format_ready_value(text, sizeof(text), mode, get_profile_target(*profile_controller, mode, i));
             lv_label_set_text(weight_labels[i], text);
         }
-        update_dose_labels(i, mode);
+        update_mode_icon(i, mode);
     }
+
+    update_top_caption(style, mode);
 
     // Hidden tabs/dots change the tabview content's flex layout (hidden
     // children are skipped) - force it to resolve now, before computing the
     // scroll target below, so it isn't based on stale (pre-hide) positions.
     lv_obj_update_layout(tabview);
 
-    update_active_dot(profile_controller->get_current_profile());
+    update_active_dot(profile_controller->get_current_profile(), mode);
     lv_tabview_set_act(tabview, profile_controller->get_current_profile(), LV_ANIM_OFF);
 }
 
-void ReadyScreen::update_active_dot(int tab) {
+void ReadyScreen::update_top_caption(ProfileStyle style, GrindMode mode) {
+    if (!top_caption_label) {
+        return;
+    }
+    const char* text;
+    if (mode == GrindMode::TIME) {
+        text = "TIME";
+    } else {
+        text = (style == ProfileStyle::ESPRESSO) ? "DOSE" : "CUPS";
+    }
+    lv_label_set_text(top_caption_label, text);
+}
+
+void ReadyScreen::update_mode_icon(int index, GrindMode mode) {
+    if (name_icon_labels[index]) {
+        lv_label_set_text(name_icon_labels[index], mode == GrindMode::TIME ? ICON_WATCH : ICON_BEAN);
+    }
+}
+
+void ReadyScreen::update_active_dot(int tab, GrindMode mode) {
+    uint32_t active_color = (mode == GrindMode::TIME) ? THEME_COLOR_ARC_TIME : THEME_COLOR_ARC_WEIGHT;
     for (int i = 0; i < active_profile_count; i++) {
         if (!page_dots[i]) continue;
         bool active = (i == tab);
         lv_obj_set_style_bg_color(page_dots[i],
-                                  lv_color_hex(active ? THEME_COLOR_TEXT_PRIMARY : THEME_COLOR_NEUTRAL), 0);
+                                  lv_color_hex(active ? active_color : THEME_COLOR_NEUTRAL), 0);
         lv_obj_set_style_bg_opa(page_dots[i], LV_OPA_COVER, 0);
-    }
-}
-
-lv_obj_t* ReadyScreen::create_divider(lv_obj_t* parent) {
-    lv_obj_t* divider = lv_obj_create(parent);
-    lv_obj_set_size(divider, 60, 1);
-    lv_obj_set_style_bg_color(divider, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_bg_opa(divider, LV_OPA_40, 0);
-    lv_obj_set_style_border_width(divider, 0, 0);
-    lv_obj_set_style_margin_ver(divider, 4, 0);
-    lv_obj_clear_flag(divider, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_clear_flag(divider, LV_OBJ_FLAG_CLICKABLE);
-    return divider;
-}
-
-lv_obj_t* ReadyScreen::create_icon_caption_row(lv_obj_t* parent, const char* icon_char, const char* caption_text,
-                                              lv_obj_t** out_icon_label, lv_obj_t** out_caption_label) {
-    lv_obj_t* row = lv_obj_create(parent);
-    lv_obj_set_size(row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(row, 0, 0);
-    lv_obj_set_style_pad_all(row, 0, 0);
-    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_clear_flag(row, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_gap(row, 6, 0);
-
-    lv_obj_t* icon_label = lv_label_create(row);
-    lv_label_set_text(icon_label, icon_char);
-    lv_obj_set_style_text_font(icon_label, &lv_font_custom_icons_24, 0);
-    lv_obj_set_style_text_color(icon_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-
-    lv_obj_t* caption_label = lv_label_create(row);
-    lv_label_set_text(caption_label, caption_text);
-    lv_obj_set_style_text_font(caption_label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(caption_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-
-    if (out_icon_label) *out_icon_label = icon_label;
-    if (out_caption_label) *out_caption_label = caption_label;
-    return row;
-}
-
-void ReadyScreen::update_dose_labels(int index, GrindMode mode) {
-    if (dose_icon_labels[index]) {
-        lv_label_set_text(dose_icon_labels[index], mode == GrindMode::TIME ? ICON_WATCH : ICON_BEAN);
-    }
-    if (dose_caption_labels[index]) {
-        lv_label_set_text(dose_caption_labels[index], mode == GrindMode::TIME ? "TIME" : "DOSE");
     }
 }
 
 void ReadyScreen::create_profile_page(lv_obj_t* parent, int profile_index) {
     lv_obj_set_layout(parent, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
+    // CENTER on the main axis - since the big value is the first child and
+    // the subtitles below it add extra height, the group's center (and so
+    // the big value itself) lands slightly above the page's true center,
+    // clear of the top caption/page-dot band without needing fixed padding.
     lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_gap(parent, 4, 0);
 
-    // Title - the profile name (e.g. "8 CUPS"), styled as a screen title
-    // rather than the dimmer subtitle treatment used elsewhere.
-    name_labels[profile_index] = lv_label_create(parent);
-    lv_label_set_text(name_labels[profile_index], "");
-    lv_obj_set_style_text_font(name_labels[profile_index], &lv_font_montserrat_34, 0);
-    lv_obj_set_style_text_color(name_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
-    lv_obj_add_flag(name_labels[profile_index], LV_OBJ_FLAG_CLICKABLE);
-
-    // Water block (divider + icon/caption row + volume value) - hidden as a
-    // unit by sync_to_profile_style() for styles/slots with no fixed volume
-    // (Espresso, CUSTOM), leaving only the divider below directly under the
-    // title.
-    water_dividers[profile_index] = create_divider(parent);
-    water_rows[profile_index] = create_icon_caption_row(parent, ICON_DROPLET, "WATER", nullptr, nullptr);
-
-    volume_labels[profile_index] = lv_label_create(parent);
-    lv_label_set_text(volume_labels[profile_index], "");
-    lv_obj_set_style_text_font(volume_labels[profile_index], &lv_font_montserrat_28, 0);
-    lv_obj_set_style_text_color(volume_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
-    lv_obj_set_style_margin_bottom(volume_labels[profile_index], 6, 0);
-
-    // Divider before the dose block - always shown, unlike the water divider
-    // above, so there's still a separator when the water block is hidden.
-    create_divider(parent);
-
-    // Dose block - icon/caption switch between bean/"DOSE" (Weight mode) and
-    // watch/"TIME" (Time mode) via update_dose_labels(), kept in sync with
-    // weight_labels' own mode-dependent text.
-    create_icon_caption_row(parent, ICON_BEAN, "DOSE", &dose_icon_labels[profile_index], &dose_caption_labels[profile_index]);
-
+    // Big value - the profile's target weight/time.
     weight_labels[profile_index] = lv_label_create(parent);
     lv_label_set_text(weight_labels[profile_index], "");
     lv_obj_set_style_text_font(weight_labels[profile_index], &lv_font_montserrat_60, 0);
     lv_obj_set_style_text_color(weight_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
     lv_obj_add_flag(weight_labels[profile_index], LV_OBJ_FLAG_CLICKABLE);
+
+    // Profile name subtitle (e.g. "2 Cups", "Single") with a bean/watch icon
+    // to its left (icon swaps per mode via update_mode_icon()), directly
+    // under the big value.
+    lv_obj_t* name_row = lv_obj_create(parent);
+    lv_obj_set_size(name_row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(name_row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(name_row, 0, 0);
+    lv_obj_set_style_pad_all(name_row, 0, 0);
+    lv_obj_clear_flag(name_row, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(name_row, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_layout(name_row, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(name_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(name_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(name_row, 6, 0);
+    lv_obj_set_style_margin_top(name_row, 2, 0);
+
+    name_icon_labels[profile_index] = lv_label_create(name_row);
+    lv_label_set_text(name_icon_labels[profile_index], ICON_BEAN);
+    lv_obj_set_style_text_font(name_icon_labels[profile_index], &lv_font_custom_icons_24, 0);
+    lv_obj_set_style_text_color(name_icon_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+
+    name_labels[profile_index] = lv_label_create(name_row);
+    lv_label_set_text(name_labels[profile_index], "");
+    lv_obj_set_style_text_font(name_labels[profile_index], &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(name_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+
+    // Volume subtitle (e.g. "500mL", "1.0L") - hidden by sync_to_profile_style()
+    // for styles/slots with no fixed volume (Espresso, CUSTOM).
+    volume_labels[profile_index] = lv_label_create(parent);
+    lv_label_set_text(volume_labels[profile_index], "");
+    lv_obj_set_style_text_font(volume_labels[profile_index], &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(volume_labels[profile_index], lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_margin_top(volume_labels[profile_index], 2, 0);
 }
 
 void ReadyScreen::create_menu_page(lv_obj_t* parent) {
@@ -299,14 +289,14 @@ void ReadyScreen::update_profile_values(const float values[], int count, GrindMo
             format_ready_value(text, sizeof(text), mode, values[i]);
             lv_label_set_text(weight_labels[i], text);
         }
-        update_dose_labels(i, mode);
+        update_mode_icon(i, mode);
     }
 }
 
-void ReadyScreen::set_active_tab(int tab) {
+void ReadyScreen::set_active_tab(int tab, GrindMode mode) {
     if (tab >= 0 && tab < active_profile_count) {
         lv_tabview_set_act(tabview, tab, LV_ANIM_OFF);
-        update_active_dot(tab);
+        update_active_dot(tab, mode);
     }
 }
 

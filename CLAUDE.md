@@ -51,10 +51,11 @@ python3 tools/grinder.py analyze
 - **Always runs** before weight-mode grinding to saturate the grinder for accurate latency detection
 - **Prime mode**: Keeps coffee, continues immediately to PREDICTIVE phase
 - **Purge mode** (default): Shows confirmation popup, waits for user to discard stale grinds, then continues
-- **Configurable amount**: 0.1g-5.0g (default 1.0g), replaces old hardcoded `GRIND_PRIME_TARGET_WEIGHT_G`
+- **Configurable amount**: 0.1g-2.5g (default 1.0g), replaces old hardcoded `GRIND_PRIME_TARGET_WEIGHT_G`
+- **Freshness check**: Purge mode only prompts if grounds are actually stale — skipped since boot, or elapsed time since the last completed grind exceeds a configurable freshness window (default 8h, adjustable 0.5-48h). Otherwise Purge mode silently behaves like Prime for that grind.
 - **Purge popup**: "Keep purge grinds from now on" checkbox switches mode from Purge → Prime in preferences
 - **Logging disabled** during PURGE_CONFIRM phase to avoid capturing data while paused
-- **Preferences**: `chute_mode` (int: 0=Prime, 1=Purge, default=1), `chute_amount_g` (float: 0.1-5.0, default=1.0)
+- **Preferences**: `grinder_mode` (int: 0=Prime, 1=Purge, default=1), `grind_amount_g` (float: 0.1-2.5, default=1.0), `freshness_hrs` (float, default=8.0)
 
 **Time Mode Pulses:** Split-button completion screen (OK + PULSE), `TIME_ADDITIONAL_PULSE` phase, 100ms duration
 

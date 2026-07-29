@@ -9,6 +9,7 @@ private:
     lv_obj_t* profile_label;
     lv_obj_t* target_label;
     lv_obj_t* weight_label;
+    lv_obj_t* status_label;
     lv_obj_t* progress_arc;
     bool visible;
     bool time_mode;
@@ -25,6 +26,8 @@ public:
     void update_countdown(float seconds_remaining);
     void update_tare_display() override;
     void update_progress(int percent) override;
+    void set_status_text(const char* text, uint32_t color_hex) override;
+    void set_progress_color(uint32_t color_hex) override;
     void set_time_mode(bool enabled);
     
     bool is_visible() const override { return visible; }

@@ -55,16 +55,6 @@ void PurgeConfirmScreen::create() {
     lv_obj_update_layout(message_container);
     lv_obj_scroll_to_y(message_container, 0, LV_ANIM_OFF);
 
-    // Checkbox with label - 2x normal size
-    checkbox = lv_checkbox_create(screen);
-    lv_checkbox_set_text(checkbox, "Always keep");
-    lv_obj_set_style_text_font(checkbox, &lv_font_montserrat_32, 0);  // Larger font
-    lv_obj_set_style_text_color(checkbox, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
-    lv_obj_set_width(checkbox, 260);  // Set max width to prevent overflow
-
-    // Scale up the checkbox indicator to 2x size
-    lv_obj_set_style_transform_scale(checkbox, 200, LV_PART_INDICATOR);  // 200 = 2.0x scale
-
     // NOTE: No buttons created here - reuse existing grind_button_ (CANCEL) and pulse_button_ (OK)
     // positioned by GrindingUIController::update_button_layout() when in PURGE_CONFIRM phase
 
@@ -73,10 +63,6 @@ void PurgeConfirmScreen::create() {
 }
 
 void PurgeConfirmScreen::show() {
-    if (checkbox) {
-        // Always default to unchecked to prevent accidental preference changes
-        lv_obj_clear_state(checkbox, LV_STATE_CHECKED);
-    }
     lv_obj_clear_flag(screen, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(screen);  // Bring to front, above all other UI elements
     visible = true;
@@ -85,11 +71,6 @@ void PurgeConfirmScreen::show() {
 void PurgeConfirmScreen::hide() {
     lv_obj_add_flag(screen, LV_OBJ_FLAG_HIDDEN);
     visible = false;
-}
-
-bool PurgeConfirmScreen::is_checkbox_checked() const {
-    if (!checkbox) return false;
-    return lv_obj_has_state(checkbox, LV_STATE_CHECKED);
 }
 
 void PurgeConfirmScreen::set_message(const char* message) {

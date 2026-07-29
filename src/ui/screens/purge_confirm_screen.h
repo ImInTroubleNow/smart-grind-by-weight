@@ -7,7 +7,6 @@ private:
     lv_obj_t* screen;
     lv_obj_t* title_label;
     lv_obj_t* message_label;
-    lv_obj_t* checkbox;
     bool visible;
 
 public:
@@ -17,7 +16,5 @@ public:
     void set_message(const char* message);
 
     bool is_visible() const { return visible; }
-    bool is_checkbox_checked() const;
     lv_obj_t* get_screen() const { return screen; }
-    lv_obj_t* get_checkbox() const { return checkbox; }
 };

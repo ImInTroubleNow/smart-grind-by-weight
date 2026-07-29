@@ -323,6 +323,8 @@ void MenuUIController::handle_grind_mode_swipe_toggle() {
         if (ui_manager_->ready_controller_) {
             ui_manager_->ready_controller_->refresh_profiles();
         }
+        ui_manager_->ready_screen.update_top_caption(ui_manager_->profile_controller->get_profile_style(),
+                                                     ui_manager_->current_mode);
         ui_manager_->edit_target = get_current_profile_target(*ui_manager_->profile_controller, ui_manager_->current_mode);
         if (ui_manager_->state_machine->is_state(UIState::EDIT)) {
             if (ui_manager_->edit_controller_) {
@@ -408,6 +410,8 @@ void MenuUIController::apply_grind_type(bool want_time_only) {
     if (ui_manager_->ready_controller_) {
         ui_manager_->ready_controller_->refresh_profiles();
     }
+    ui_manager_->ready_screen.update_top_caption(ui_manager_->profile_controller->get_profile_style(),
+                                                 ui_manager_->current_mode);
     ui_manager_->edit_target = get_current_profile_target(*ui_manager_->profile_controller, ui_manager_->current_mode);
     if (ui_manager_->state_machine->is_state(UIState::EDIT)) {
         if (ui_manager_->edit_controller_) {

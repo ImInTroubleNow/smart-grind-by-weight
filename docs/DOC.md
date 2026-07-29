@@ -343,8 +343,9 @@ Access **Menu → Grind Settings** to configure:
 - **Purging** *(Advanced)*: Control how the grinder saturates itself before weight-mode grinding
   - **Prime mode**: Keeps the coffee used to saturate the grinder, continues immediately
   - **Purge mode** (default): Prompts you to discard stale grinds before continuing
-  - **Amount slider**: Configure purge/prime amount (0.1g-5.0g, default 1.0g). Amount is a minimum target; actual output will be slightly higher.
+  - **Amount slider**: Configure purge/prime amount (0.1g-2.5g, default 1.0g). Amount is a minimum target; actual output will be slightly higher.
   - **"Keep purge grinds from now on" checkbox**: Appears during purge confirmation - switches to Prime mode when checked
+  - **Freshness window**: Purge mode only shows the confirmation popup if the grounds are actually stale (never purged since boot, or the freshness window has elapsed since the last completed grind). Adjustable 0.5-48h, default 8h. If the grounds are still fresh, Purge mode continues immediately, same as Prime.
 
   *Explanation:* The time between motor start and grinds hitting the cup (grind latency) is used to predict the coast time (how long grinds will keep coming after the motor is disengaged). Purging clears stale coffee and saturates the grinder with fresh grounds, ensuring accurate latency detection. If you prefer to keep all coffee without manual intervention, select Prime mode.
 
@@ -443,7 +444,7 @@ Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode i
     |       |-- Start on Cup toggle (start when ≈50 g arrives within ~2 s)
     |       |-- Return on Removal toggle (drop back to Ready when that weight leaves)
     |       |-- Purging (Prime/Purge radio buttons)
-    |       \-- Amount slider (0.1g-5.0g for purge/prime operation)
+    |       \-- Amount slider (0.1g-2.5g for purge/prime operation)
     |
     \-- Info
         +-- Diagnostics
@@ -453,10 +454,10 @@ Main Screen (swipe left/right between tabs, up/down to toggle weight/time mode i
         |   \-- Reset diagnostics button
         |
         +-- System Info
-        |   |-- Firmware version & build number
-        |   |-- Real-time weight sensor data (instant, samples, raw)
-        |   |-- Uptime display
-        |   \-- Memory usage
+        |   |-- Device Uptime hero display
+        |   |-- Memory bar (heap used/free, warns when low)
+        |   |-- Firmware section (version, build date)
+        |   \-- Live Reading section (instant weight, samples, raw ADC)
         |
         +-- Logs & Data
         |   |-- Logging toggle (enable/disable session file writing)
@@ -592,9 +593,9 @@ The system uses a **zero-shot learning algorithm** requiring no prior knowledge 
 
 2. **Grinder Saturation Phase** (Weight mode only)
    - Saturates the grinder before main grind for accurate latency detection
-   - Configurable amount: 0.1g-5.0g (default 1.0g)
+   - Configurable amount: 0.1g-2.5g (default 1.0g)
    - **Prime mode**: Keeps coffee, continues immediately after settling
-   - **Purge mode**: Shows confirmation popup, waits for user to discard stale grinds
+   - **Purge mode**: Shows confirmation popup, waits for user to discard stale grinds — but only if grounds are actually stale (never purged since boot, or a configurable freshness window (default 8h) has elapsed since the last completed grind); otherwise continues immediately like Prime mode
    - Logging and chart updates disabled during purge confirmation
 
 3. **Predictive Phase**

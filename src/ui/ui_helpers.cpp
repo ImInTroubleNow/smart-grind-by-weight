@@ -50,7 +50,7 @@ void set_label_text_float(lv_obj_t* label, float value, const char* unit) {
     char buf[24];
     
     if (unit) {
-        snprintf(buf, sizeof(buf), "%.2fg %s", value, unit);
+        snprintf(buf, sizeof(buf), "%.2f%s", value, unit);
     } else {
         snprintf(buf, sizeof(buf), "%.2f", value);
     }
@@ -105,50 +105,6 @@ lv_obj_t* create_dual_button_row(lv_obj_t* parent, lv_obj_t** left_button, lv_ob
     return row_container;
 }
 
-lv_obj_t* create_data_label(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool stacked) {
-    lv_obj_t* container = lv_obj_create(parent);
-    lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(container, 0, 0);
-    lv_obj_set_style_pad_all(container, 2, 0);
-    lv_obj_set_style_pad_left(container, 10, 0);
-    lv_obj_set_style_pad_right(container, 14, 0);
-    lv_obj_set_style_margin_all(container, 0, 0);
-    lv_obj_set_size(container, 280, LV_SIZE_CONTENT);
-    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_set_layout(container, LV_LAYOUT_FLEX);
-    if (stacked) {
-        lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
-        lv_obj_set_flex_align(container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    } else {
-        lv_obj_set_flex_flow(container, LV_FLEX_FLOW_ROW_WRAP);
-        lv_obj_set_flex_align(container, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
-    }
-
-    lv_obj_t* name_label = lv_label_create(container);
-    lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
-    if (stacked) {
-        lv_obj_set_width(name_label, LV_PCT(100));
-        lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_LEFT, 0);
-    }
-
-    *value_label = lv_label_create(container);
-    lv_label_set_text(*value_label, "");
-    lv_obj_set_style_text_font(*value_label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(*value_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    if (stacked) {
-        lv_obj_set_width(*value_label, LV_PCT(100));
-        lv_obj_set_style_text_align(*value_label, LV_TEXT_ALIGN_RIGHT, 0);
-        lv_obj_set_style_margin_top(*value_label, 4, 0);
-    } else {
-        lv_obj_set_style_text_align(*value_label, LV_TEXT_ALIGN_RIGHT, 0);
-    }
-
-    return container;
-}
-
 // Segmented control data structure
 struct SegmentedControlData {
     lv_obj_t** buttons;
@@ -166,8 +122,11 @@ static void segmented_control_apply_visuals(SegmentedControlData* data) {
         bool selected = (i == data->selected_index);
         lv_obj_set_style_bg_opa(data->buttons[i], selected ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
         lv_obj_set_style_bg_color(data->buttons[i], lv_color_hex(data->selected_color), 0);
+        // Selected segment matches every other filled-color button in the app
+        // (Tare, Run, Purge Logs, Factory Reset, Reset Diagnostics): black text
+        // on the colored fill, not white.
         lv_obj_set_style_text_color(data->labels[i],
-                                   selected ? lv_color_hex(THEME_COLOR_TEXT_PRIMARY) : lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+                                   selected ? lv_color_hex(THEME_COLOR_BACKGROUND) : lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
     }
 }
 

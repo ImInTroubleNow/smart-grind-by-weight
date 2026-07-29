@@ -26,27 +26,38 @@ private:
     lv_obj_t* motor_test_page;
 
     // Info tab elements
-    lv_obj_t* info_label;
-    lv_obj_t* uptime_label;
-    lv_obj_t* memory_label;
+    lv_obj_t* uptime_label;                // Hero value under "DEVICE UPTIME"
+    lv_obj_t* info_mem_fill;               // Memory bar fill segment (width set by heap-used percentage)
+    lv_obj_t* info_mem_used_label;         // "Used" caption above the bar (recolors to warning when low)
+    lv_obj_t* info_mem_used_value_label;   // Count under bar (used, emerald/warning)
+    lv_obj_t* info_mem_free_value_label;   // Count under bar (free, neutral)
+    lv_obj_t* info_mem_caption_label;      // "N% of N kB heap used." sub-caption
     lv_obj_t* instant_label;
     lv_obj_t* samples_label;
     lv_obj_t* raw_label;
-    lv_obj_t* sessions_label;
+    lv_obj_t* data_hero_sessions_label;    // Hero value under "SESSIONS STORED"
+    lv_obj_t* data_capacity_fill;          // Capacity bar fill segment (width set by percentage)
+    lv_obj_t* data_capacity_stored_label;  // Count under bar (stored, emerald)
+    lv_obj_t* data_capacity_free_label;    // Count under bar (free, neutral)
     lv_obj_t* events_label;
     lv_obj_t* measurements_label;
+    lv_obj_t* data_measurements_avg_label; // "avg N/session" sub-caption
     lv_obj_t* refresh_stats_button;
 
     // Lifetime statistics labels
-    lv_obj_t* stat_total_grinds_label;
-    lv_obj_t* stat_shots_label;
-    lv_obj_t* stat_espresso_shots_label;
+    lv_obj_t* stat_total_grinds_label; // Hero value under "TOTAL GRINDS"
+    lv_obj_t* stat_drip_labels[6];     // 2/4/6/8/10 Cup, Custom
+    lv_obj_t* stat_espresso_labels[3]; // Single, Double, Custom
     lv_obj_t* stat_motor_runtime_label;
     lv_obj_t* stat_device_uptime_label;
     lv_obj_t* stat_total_weight_label;
-    lv_obj_t* stat_mode_grinds_label;
+    lv_obj_t* stat_mode_weight_fill;        // Weight/Time proportion bar segments
+    lv_obj_t* stat_mode_time_fill;
+    lv_obj_t* stat_mode_weight_count_label;
+    lv_obj_t* stat_mode_time_count_label;
     lv_obj_t* stat_avg_accuracy_label;
     lv_obj_t* stat_total_pulses_label;
+    lv_obj_t* stat_avg_pulses_label;
     
     // Menu toggle elements
     lv_obj_t* ble_toggle;
@@ -99,13 +110,15 @@ private:
     lv_obj_t* scale_tare_button;
 
     // Diagnostics tab elements
-    lv_obj_t* diag_status_label;
+    lv_obj_t* diag_status_label;            // Hero value under "SYSTEM STATUS"
+    lv_obj_t* diag_info_label;              // Hero caption below the status value
     lv_obj_t* diag_calibration_factor_label;
-    lv_obj_t* diag_std_dev_g_label;
+    lv_obj_t* diag_noise_fill;              // Noise bar fill segment (width set by %-of-tolerance)
+    lv_obj_t* diag_noise_signal_label;      // "Signal" caption above the bar (recolors with the fill)
+    lv_obj_t* diag_std_dev_g_label;         // Count under the bar (current std dev, recolors)
+    lv_obj_t* diag_noise_caption_label;     // "N% of settling tolerance." sub-caption (swaps on warning)
     lv_obj_t* diag_std_dev_adc_label;
-    lv_obj_t* diag_noise_level_label;
     lv_obj_t* diag_motor_latency_label;
-    lv_obj_t* diag_info_label;
     lv_obj_t* diag_reset_button;
 
     // Common elements
@@ -195,16 +208,13 @@ private:
                                           const lv_font_t *name_font = &lv_font_montserrat_20);
     lv_obj_t *create_flat_data_row(lv_obj_t *parent, const char *name, lv_obj_t **value_label, bool with_divider = true,
                                    const lv_font_t *font = &lv_font_montserrat_24);
-    lv_obj_t *create_outline_button(lv_obj_t *parent, const char *text, lv_color_t color, int32_t width_pct = 100);
+    lv_obj_t *create_stat_pair_row(lv_obj_t *parent, const char *row_label, lv_obj_t **value_labels,
+                                   const char *const *pair_labels, int count);
     lv_obj_t *create_display_slider_row(lv_obj_t *parent, const char *name,
                                         lv_obj_t **value_label, lv_obj_t **slider,
                                         uint32_t min = 0, uint32_t max = 100,
                                         const char *description = nullptr,
                                         const lv_font_t *name_font = &lv_font_montserrat_24);
-    lv_obj_t *create_static_data_label(lv_obj_t *parent, const char *name,
-                                       const char *value);
-    lv_obj_t *create_data_label(lv_obj_t *parent, const char *name,
-                                lv_obj_t **variable, bool stacked = false);
     lv_obj_t *create_description_label(lv_obj_t *parent, const char *text,
                                        const lv_font_t *font = &lv_font_montserrat_24,
                                        lv_color_t color = lv_color_hex(THEME_COLOR_TEXT_SECONDARY));

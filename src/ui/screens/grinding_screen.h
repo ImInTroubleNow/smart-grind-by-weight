@@ -33,6 +33,8 @@ public:
     void update_countdown(float seconds_remaining);
     void update_tare_display() override;
     void update_progress(int percent) override;
+    void set_status_text(const char* text, uint32_t color_hex) override;
+    void set_progress_color(uint32_t color_hex) override;
     bool is_visible() const override;
     lv_obj_t* get_screen() const override;
     void add_chart_data_point(float current_weight, float flow_rate, uint32_t current_time_ms) override;

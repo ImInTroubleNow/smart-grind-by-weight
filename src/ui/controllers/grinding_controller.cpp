@@ -12,8 +12,8 @@
 
 namespace {
 // Bottom margin for the grind/pulse buttons, shifted up from the screen edge
-// to leave room for the Ready screen's page-dot indicator beneath them.
-constexpr int32_t kButtonBottomMargin = 30;
+// to leave room for the "GRIND" caption label beneath them (Ready state only).
+constexpr int32_t kButtonBottomMargin = 36;
 
 // Single-button layout (Ready/Grinding/Complete/Timeout) is sized a bit
 // larger than the dual-button layout (purge-confirm, time-mode pulse
@@ -40,7 +40,7 @@ void GrindingUIController::build_controls() {
     lv_obj_set_size(grind_button_, kSingleButtonSize, kSingleButtonSize);
     lv_obj_align(grind_button_, LV_ALIGN_BOTTOM_MID, 0, -kButtonBottomMargin);
     lv_obj_set_style_radius(grind_button_, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_PRIMARY), 0);
+    lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_ARC_WEIGHT), 0);
     lv_obj_set_style_border_width(grind_button_, 0, 0);
     lv_obj_set_style_shadow_width(grind_button_, 0, 0);
 
@@ -48,6 +48,17 @@ void GrindingUIController::build_controls() {
     lv_img_set_src(grind_icon_, LV_SYMBOL_PLAY);
     lv_obj_center(grind_icon_);
     lv_obj_set_style_text_font(grind_icon_, &lv_font_montserrat_24, 0);
+
+    // "GRIND" caption below the button - Ready state only (see
+    // enter_ready_state()/enter_*_state() below).
+    grind_caption_label_ = lv_label_create(lv_scr_act());
+    lv_label_set_text(grind_caption_label_, "GRIND");
+    lv_obj_set_style_text_font(grind_caption_label_, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(grind_caption_label_, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
+    lv_obj_set_style_text_letter_space(grind_caption_label_, 1, 0);
+    lv_obj_align(grind_caption_label_, LV_ALIGN_BOTTOM_MID, 0, -8);
+    lv_obj_clear_flag(grind_caption_label_, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
 
     pulse_button_ = lv_btn_create(lv_scr_act());
     lv_obj_set_size(pulse_button_, kDualButtonSize, kDualButtonSize);
@@ -183,7 +194,7 @@ void GrindingUIController::update(UIState current_state) {
             char error_display[64];
             const char* message = error_message_[0] ? error_message_ : "Error";
             std::snprintf(error_display, sizeof(error_display), "%s", message);
-            ui_manager_->grinding_screen.update_target_weight_text(error_display);
+            ui_manager_->grinding_screen.set_status_text(error_display, THEME_COLOR_TEXT_SECONDARY);
             break;
         }
         default:
@@ -223,7 +234,8 @@ void GrindingUIController::handle_grind_button() {
             float target_weight = ui_manager_->profile_controller->get_current_weight();
             float target_time_seconds = ui_manager_->profile_controller->get_current_time();
             uint32_t target_time_ms = static_cast<uint32_t>((target_time_seconds * 1000.0f) + 0.5f);
-            ui_manager_->grind_controller->start_grind(target_weight, target_time_ms, ui_manager_->current_mode);
+            bool time_only = ui_manager_->profile_controller->is_time_only_mode();
+            ui_manager_->grind_controller->start_grind(target_weight, target_time_ms, ui_manager_->current_mode, time_only);
         }
         LOG_BLE("[%lums GRIND_START] start_grind() returned\n", millis());
     } else if (ui_manager_->state_machine->is_state(UIState::GRINDING)) {
@@ -281,18 +293,6 @@ void GrindingUIController::handle_purge_confirm_continue() {
         return;
     }
 
-    // Check if "Keep purge grinds from now on" checkbox is checked
-    if (ui_manager_->purge_confirm_screen.is_checkbox_checked()) {
-        LOG_BLE("[%lums PURGE] User chose to keep grinds - switching to Prime mode\n", millis());
-
-        // Switch grinder purge mode from Purge to Prime in preferences
-        auto* hardware = ui_manager_->get_hardware_manager();
-        Preferences* prefs = hardware ? hardware->get_preferences() : nullptr;
-        if (prefs) {
-            prefs->putInt(GrindController::PREF_KEY_GRINDER_MODE, static_cast<int>(GrinderPurgeMode::PRIME));
-        }
-    }
-
     // Hide the purge confirmation screen and continue grinding
     ui_manager_->purge_confirm_screen.hide();
     ui_manager_->switch_to_state(UIState::GRINDING);
@@ -309,27 +309,24 @@ void GrindingUIController::update_grind_button_icon() {
     if (ui_manager_->state_machine->is_state(UIState::PURGE_CONFIRM)) {
         // During purge confirm, show STOP icon (user can cancel the grind)
         lv_img_set_src(grind_icon_, LV_SYMBOL_STOP);
-        lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_ERROR), 0);
+        lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_STOP), 0);
     } else if (ui_manager_->state_machine->is_state(UIState::GRINDING)) {
+        // Stop is always the same color regardless of grind mode - it's a
+        // stop action, not a themed one.
         lv_img_set_src(grind_icon_, LV_SYMBOL_STOP);
-        lv_obj_set_style_bg_color(grind_button_,
-                                  ui_manager_->current_mode == GrindMode::TIME
-                                      ? lv_color_hex(THEME_COLOR_ACCENT)
-                                      : lv_color_hex(THEME_COLOR_PRIMARY),
-                                  0);
+        lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_STOP), 0);
     } else if (ui_manager_->state_machine->is_state(UIState::GRIND_COMPLETE)) {
         lv_img_set_src(grind_icon_, LV_SYMBOL_OK);
         lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_SUCCESS), 0);
     } else if (ui_manager_->state_machine->is_state(UIState::GRIND_TIMEOUT)) {
         lv_img_set_src(grind_icon_, LV_SYMBOL_CLOSE);
         lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_WARNING), 0);
+    } else if (ui_manager_->current_mode == GrindMode::TIME) {
+        lv_img_set_src(grind_icon_, LV_SYMBOL_PLAY);
+        lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_ARC_TIME), 0);
     } else {
         lv_img_set_src(grind_icon_, LV_SYMBOL_PLAY);
-        lv_obj_set_style_bg_color(grind_button_,
-                                  ui_manager_->current_mode == GrindMode::TIME
-                                      ? lv_color_hex(THEME_COLOR_ACCENT)
-                                      : lv_color_hex(THEME_COLOR_PRIMARY),
-                                  0);
+        lv_obj_set_style_bg_color(grind_button_, lv_color_hex(THEME_COLOR_ARC_WEIGHT), 0);
     }
 
     update_button_layout();
@@ -483,7 +480,13 @@ void GrindingUIController::handle_grind_event(const GrindEventData& event_data) 
                 ui_manager_->grinding_screen.update_tare_display();
             } else {
                 ui_manager_->current_mode = event_data.mode;
-                ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
+                // A trailing progress tick can still arrive just after the
+                // COMPLETED/TIMEOUT event is processed - don't let it stomp
+                // the complete/timeout color override with the mode color.
+                if (!ui_manager_->state_machine->is_state(UIState::GRIND_COMPLETE) &&
+                    !ui_manager_->state_machine->is_state(UIState::GRIND_TIMEOUT)) {
+                    ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
+                }
                 update_weight_display(event_data.current_weight);
                 ui_manager_->grinding_screen.update_progress(event_data.progress_percent);
 
@@ -600,6 +603,9 @@ void GrindingUIController::enter_ready_state() {
     if (pulse_button_) {
         lv_obj_add_flag(pulse_button_, LV_OBJ_FLAG_HIDDEN);
     }
+    if (grind_caption_label_) {
+        lv_obj_clear_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
+    }
     ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
 }
 
@@ -609,6 +615,9 @@ void GrindingUIController::enter_edit_state() {
     }
     if (pulse_button_) {
         lv_obj_add_flag(pulse_button_, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (grind_caption_label_) {
+        lv_obj_add_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
@@ -623,8 +632,12 @@ void GrindingUIController::enter_grinding_state() {
         update_weight_display(weight_sensor->get_display_weight());
     }
     ui_manager_->grinding_screen.update_progress(0);
+    ui_manager_->grinding_screen.set_status_text("GRINDING...", THEME_COLOR_TEXT_SECONDARY);
     if (grind_button_) {
         lv_obj_clear_flag(grind_button_, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (grind_caption_label_) {
+        lv_obj_add_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
@@ -632,22 +645,30 @@ void GrindingUIController::enter_grind_complete_state() {
     if (grind_button_) {
         lv_obj_clear_flag(grind_button_, LV_OBJ_FLAG_HIDDEN);
     }
+    if (grind_caption_label_) {
+        lv_obj_add_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
+    }
     ui_manager_->grinding_screen.update_profile_name(ui_manager_->profile_controller->get_current_name());
     ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
     update_weight_display(final_grind_weight_);
     ui_manager_->grinding_screen.update_progress(final_grind_progress_);
+    ui_manager_->grinding_screen.set_status_text("DONE", THEME_COLOR_GRIND_COMPLETE);
+    ui_manager_->grinding_screen.set_progress_color(THEME_COLOR_GRIND_COMPLETE);
 }
 
 void GrindingUIController::enter_grind_timeout_state() {
     if (grind_button_) {
         lv_obj_clear_flag(grind_button_, LV_OBJ_FLAG_HIDDEN);
     }
+    if (grind_caption_label_) {
+        lv_obj_add_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
+    }
     ui_manager_->grinding_screen.set_mode(ui_manager_->current_mode);
     ui_manager_->grinding_screen.update_profile_name("ERROR");
     char error_display[64];
     const char* message = error_message_[0] ? error_message_ : "Error";
     std::snprintf(error_display, sizeof(error_display), "%s", message);
-    ui_manager_->grinding_screen.update_target_weight_text(error_display);
+    ui_manager_->grinding_screen.set_status_text(error_display, THEME_COLOR_TEXT_SECONDARY);
     update_weight_display(error_grind_weight_);
     ui_manager_->grinding_screen.update_progress(error_grind_progress_);
 }
@@ -658,6 +679,9 @@ void GrindingUIController::enter_menu_state() {
     }
     if (pulse_button_) {
         lv_obj_add_flag(pulse_button_, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (grind_caption_label_) {
+        lv_obj_add_flag(grind_caption_label_, LV_OBJ_FLAG_HIDDEN);
     }
 }
 

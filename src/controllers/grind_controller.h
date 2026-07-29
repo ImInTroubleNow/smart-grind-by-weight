@@ -99,6 +99,7 @@ private:
     
     float tolerance;
     GrindMode mode;
+    bool time_only_session_ = false;    // Weight sensor disabled by user choice - skip taring entirely
     GrinderPurgeMode grinder_purge_mode_for_session;
     float grinder_purge_amount_g_for_session;
 
@@ -197,7 +198,7 @@ private:
 
 public:
     void init(WeightSensor* lc, Grinder* gr, Preferences* prefs);
-    void start_grind(float target_weight, uint32_t target_time_ms, GrindMode grind_mode);
+    void start_grind(float target_weight, uint32_t target_time_ms, GrindMode grind_mode, bool time_only = false);
     void return_to_idle(); // Called by UI to acknowledge completion/timeout
     void stop_grind();
     void continue_from_purge(); // Called by UI to continue from PURGE_CONFIRM to PREDICTIVE
@@ -287,7 +288,7 @@ private:
     bool should_log_measurements() const;
     
     // Internal state methods (moved from public to prevent polling)
-    bool show_taring_text() const { return phase == GrindPhase::INITIALIZING || phase == GrindPhase::SETUP || phase == GrindPhase::TARING || phase == GrindPhase::TARE_CONFIRM; }
+    bool show_taring_text() const { return !time_only_session_ && (phase == GrindPhase::INITIALIZING || phase == GrindPhase::SETUP || phase == GrindPhase::TARING || phase == GrindPhase::TARE_CONFIRM); }
     int get_progress_percent() const;
     float get_grind_time() const;
     const char* get_phase_name(GrindPhase p = static_cast<GrindPhase>(-1)) const;

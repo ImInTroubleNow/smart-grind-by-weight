@@ -12,7 +12,11 @@
 //------------------------------------------------------------------------------
 // Primary brand colors
 #define THEME_COLOR_PRIMARY 0xFF3D00                                           // Primary theme color (red)
-#define THEME_COLOR_ACCENT 0x00AAFF                                            // Accent color for highlights (blue)
+#define THEME_COLOR_ACCENT 0x3FA9E8                                            // Accent color for highlights (blue)
+#define THEME_COLOR_STOP 0xC43A21                                              // Grind stop button (red)
+#define THEME_COLOR_ARC_WEIGHT 0xD97A2E                                        // Weight mode color - progress arc fill and grind start button (orange)
+#define THEME_COLOR_ARC_TIME 0x2E8FC4                                          // Time mode color - progress arc fill and grind start button (blue)
+#define THEME_COLOR_GRIND_COMPLETE 0x2EB45C                                    // Grind complete state - arc, button, and status text (green)
 #define THEME_COLOR_SECONDARY 0xAAAAAA                                         // Secondary theme color (light gray)
 
 // Main menu section icon colors
@@ -43,7 +47,7 @@
 #define THEME_BUTTON_WIDTH_PX 120                                             // Standard button width
 
 // Progress and feedback elements
-#define THEME_PROGRESS_ARC_DIAMETER_PX 200                                    // Progress arc diameter
+#define THEME_PROGRESS_ARC_DIAMETER_PX 200                                    // Progress arc diameter (OTA update and grinding screens)
 
 // General layout
 #define THEME_CORNER_RADIUS_PX 20                                             // Standard UI element corner radius

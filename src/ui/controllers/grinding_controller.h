@@ -55,6 +55,7 @@ private:
     UIManager* ui_manager_;
     lv_obj_t* grind_button_ = nullptr;
     lv_obj_t* grind_icon_ = nullptr;
+    lv_obj_t* grind_caption_label_ = nullptr;
     lv_obj_t* pulse_button_ = nullptr;
     lv_obj_t* pulse_icon_ = nullptr;
     lv_timer_t* grind_complete_timer_ = nullptr;

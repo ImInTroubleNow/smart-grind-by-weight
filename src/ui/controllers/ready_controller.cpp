@@ -40,7 +40,7 @@ void ReadyUIController::handle_tab_change(int tab) {
 
     ui_manager_->current_tab = tab;
     if (tab < count) {
-        ui_manager_->ready_screen.update_active_dot(tab);
+        ui_manager_->ready_screen.update_active_dot(tab, ui_manager_->current_mode);
     }
     if (ui_manager_->profile_controller && tab < count) {
         ui_manager_->profile_controller->set_current_profile(tab);
@@ -99,6 +99,9 @@ void ReadyUIController::toggle_mode() {
     }
 
     refresh_profiles();
+    ui_manager_->ready_screen.update_top_caption(ui_manager_->profile_controller->get_profile_style(),
+                                                 ui_manager_->current_mode);
+    ui_manager_->ready_screen.update_active_dot(ui_manager_->current_tab, ui_manager_->current_mode);
     ui_manager_->edit_target = get_current_profile_target(*ui_manager_->profile_controller, ui_manager_->current_mode);
     if (ui_manager_->state_machine && ui_manager_->state_machine->is_state(UIState::EDIT)) {
         if (ui_manager_->edit_controller_) {

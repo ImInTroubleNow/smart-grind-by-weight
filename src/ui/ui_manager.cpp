@@ -198,7 +198,7 @@ void UIManager::switch_to_state(UIState new_state) {
     switch (new_state) {
         case UIState::READY:
             ready_screen.show();
-            ready_screen.set_active_tab(current_tab);
+            ready_screen.set_active_tab(current_tab, current_mode);
             grinding_screen.set_mode(current_mode);
             if (ready_controller_) {
                 ready_controller_->refresh_profiles();

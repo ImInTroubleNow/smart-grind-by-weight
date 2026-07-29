@@ -113,6 +113,16 @@ void GrindingScreen::update_progress(int percent) {
     chart_screen.update_progress(percent);
 }
 
+void GrindingScreen::set_status_text(const char* text, uint32_t color_hex) {
+    arc_screen.set_status_text(text, color_hex);
+    chart_screen.set_status_text(text, color_hex);
+}
+
+void GrindingScreen::set_progress_color(uint32_t color_hex) {
+    arc_screen.set_progress_color(color_hex);
+    chart_screen.set_progress_color(color_hex);
+}
+
 bool GrindingScreen::is_visible() const {
     return active_screen ? active_screen->is_visible() : false;
 }

@@ -147,6 +147,10 @@ void CalibrationUIController::handle_cancel() {
         if (ui_manager_->ready_controller_) {
             ui_manager_->ready_controller_->refresh_profiles();
         }
+        if (ui_manager_->get_profile_controller()) {
+            ui_manager_->ready_screen.update_top_caption(ui_manager_->get_profile_controller()->get_profile_style(),
+                                                         ui_manager_->current_mode);
+        }
     }
 
     reset_noise_check_state();
@@ -325,6 +329,10 @@ void CalibrationUIController::complete_calibration() {
         ui_manager_->current_mode = GrindMode::WEIGHT;
         if (ui_manager_->ready_controller_) {
             ui_manager_->ready_controller_->refresh_profiles();
+        }
+        if (ui_manager_->get_profile_controller()) {
+            ui_manager_->ready_screen.update_top_caption(ui_manager_->get_profile_controller()->get_profile_style(),
+                                                         ui_manager_->current_mode);
         }
     }
 

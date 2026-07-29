@@ -109,7 +109,7 @@ void GrindController::init(WeightSensor* lc, Grinder* gr, Preferences* prefs) {
     load_motor_latency();
 }
 
-void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grind_mode) {
+void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grind_mode, bool time_only) {
     LOG_BLE("[%lums CONTROLLER] start_grind() called with target=%.1fg, time=%lums, mode=%s\n",
             millis(), target, (unsigned long)time_ms, grind_mode == GrindMode::TIME ? "TIME" : "WEIGHT");
     if (!weight_sensor || !grinder) return;
@@ -121,10 +121,11 @@ void GrindController::start_grind(float target, uint32_t time_ms, GrindMode grin
                 static_cast<int>(weight_sensor->get_hardware_fault()));
         return;
     }
-    
+
     target_weight = target;
     target_time_ms = time_ms;
     mode = grind_mode;
+    time_only_session_ = time_only;
 
     // Read grinder purge settings from preferences (always run for weight mode)
     grinder_purge_mode_for_session = static_cast<GrinderPurgeMode>(GRIND_PURGE_MODE_DEFAULT);
@@ -338,11 +339,11 @@ void GrindController::update() {
         }
             
         case GrindPhase::TARING:
-            if (weight_sensor->has_hardware_fault()) {
-                // No functioning load cell (expected for Time Only grinding with no
-                // scale present). Taring depends on real ADC samples arriving to
-                // complete, which will never happen here, so skip straight to
-                // grinding instead of stalling until the grind timeout.
+            if (weight_sensor->has_hardware_fault() || time_only_session_) {
+                // No functioning load cell, or the scale is deliberately disabled
+                // (Time Only mode). Either way there's no weight feedback to tare
+                // against, so skip straight to grinding instead of stalling until
+                // the grind timeout.
                 if (!grinder->is_grinding()) {
                     grinder->start();
                 }
