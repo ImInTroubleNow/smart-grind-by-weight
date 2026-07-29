@@ -209,7 +209,7 @@ void CalibrationUIController::start_noise_check() {
 
     auto& screen = ui_manager_->calibration_screen;
     screen.set_ok_button_enabled(false);
-    screen.update_noise_status("Status: Checking...", lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
+    screen.update_noise_status("Checking...", lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
     screen.update_noise_metric(std::numeric_limits<float>::quiet_NaN());
 }
 
@@ -254,14 +254,14 @@ void CalibrationUIController::update_noise_check() {
         if (now - noise_step_enter_ms_ >= kForceEnableMs) {
             noise_check_passed_ = true;
             noise_check_forced_pass_ = true;
-            ui_manager_->calibration_screen.update_noise_status("Status: Too noisy",
+            ui_manager_->calibration_screen.update_noise_status("Too noisy",
                                                                 lv_color_hex(THEME_COLOR_WARNING));
             ui_manager_->calibration_screen.set_ok_button_enabled(true);
             return;
         }
 
         if (now - noise_step_enter_ms_ < kMinWaitMs) {
-            ui_manager_->calibration_screen.update_noise_status("Status: Checking...",
+            ui_manager_->calibration_screen.update_noise_status("Checking...",
                                                                 lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
             ui_manager_->calibration_screen.set_ok_button_enabled(false);
             noise_ok_since_ms_ = 0;
@@ -277,7 +277,7 @@ void CalibrationUIController::update_noise_check() {
             if (stable_ms >= kStableWaitMs) {
                 noise_check_passed_ = true;
                 noise_check_forced_pass_ = false;
-                ui_manager_->calibration_screen.update_noise_status("Status: OK",
+                ui_manager_->calibration_screen.update_noise_status("OK",
                                                                     lv_color_hex(THEME_COLOR_SUCCESS));
                 ui_manager_->calibration_screen.set_ok_button_enabled(true);
             } else {
@@ -285,14 +285,14 @@ void CalibrationUIController::update_noise_check() {
                 unsigned int remaining_sec = static_cast<unsigned int>((remaining_ms + 999) / 1000);
 
                 char status_text[48];
-                snprintf(status_text, sizeof(status_text), "Status: Stable (%us)", remaining_sec);
+                snprintf(status_text, sizeof(status_text), "Stable (%us)", remaining_sec);
                 ui_manager_->calibration_screen.update_noise_status(status_text,
                                                                     lv_color_hex(THEME_COLOR_TEXT_PRIMARY));
                 ui_manager_->calibration_screen.set_ok_button_enabled(false);
             }
         } else {
             noise_ok_since_ms_ = 0;
-            ui_manager_->calibration_screen.update_noise_status("Status: Too noisy",
+            ui_manager_->calibration_screen.update_noise_status("Too noisy",
                                                                 lv_color_hex(THEME_COLOR_ERROR));
             ui_manager_->calibration_screen.set_ok_button_enabled(false);
         }
@@ -301,10 +301,10 @@ void CalibrationUIController::update_noise_check() {
 
     // Keep UI consistent once passed
     if (noise_check_forced_pass_) {
-        ui_manager_->calibration_screen.update_noise_status("Status: Too noisy",
+        ui_manager_->calibration_screen.update_noise_status("Too noisy",
                                                             lv_color_hex(THEME_COLOR_WARNING));
     } else {
-        ui_manager_->calibration_screen.update_noise_status("Status: OK", lv_color_hex(THEME_COLOR_SUCCESS));
+        ui_manager_->calibration_screen.update_noise_status("OK", lv_color_hex(THEME_COLOR_SUCCESS));
     }
     ui_manager_->calibration_screen.set_ok_button_enabled(true);
 }
