@@ -57,7 +57,8 @@ void AutoTuneUIController::update() {
 
     if (progress.phase == AutoTunePhase::COMPLETE_SUCCESS) {
         const AutoTuneResult& result = autotune_controller->get_result();
-        ui_manager_->autotune_screen.show_success_screen(result.latency_ms, progress.previous_latency_ms);
+        ui_manager_->autotune_screen.show_success_screen(result.latency_ms, progress.previous_latency_ms,
+                                                          progress.verification_success_count);
         ui_manager_->menu_screen.update_diagnostics(hw_manager->get_weight_sensor());
         autotune_started_ = false;
         return;
@@ -65,17 +66,13 @@ void AutoTuneUIController::update() {
 
     if (progress.phase == AutoTunePhase::COMPLETE_FAILURE) {
         const AutoTuneResult& result = autotune_controller->get_result();
-        ui_manager_->autotune_screen.show_failure_screen(result.error_message);
+        ui_manager_->autotune_screen.show_failure_screen(result.error_message, progress.previous_latency_ms);
         autotune_started_ = false;
         return;
     }
 
     if (autotune_controller->is_active()) {
         ui_manager_->autotune_screen.update_progress(progress);
-        // Clear message flag after UI has read it
-        if (progress.has_new_message) {
-            autotune_controller->clear_message_flag();
-        }
     }
 }
 

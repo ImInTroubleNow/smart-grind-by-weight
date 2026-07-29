@@ -4,7 +4,7 @@
 #include "../../controllers/autotune_controller.h"
 
 enum class AutoTuneScreenState {
-    CONSOLE,        // Running with console log
+    CONSOLE,        // Running with live phase/iteration/testing status
     RESULT          // Final success/failure screen
 };
 
@@ -12,20 +12,25 @@ class AutoTuneScreen {
 private:
     lv_obj_t* screen;
     lv_obj_t* title_label;
+    lv_obj_t* description_label;
 
-    // Console screen elements
-    lv_obj_t* console_container;
-    lv_obj_t* console_textarea;
+    // Running (status) screen elements
+    lv_obj_t* status_container;
+    lv_obj_t* phase_value_label;
+    lv_obj_t* iteration_value_label;
+    lv_obj_t* testing_value_label;
+    lv_obj_t* testing_bar_fill;
+    lv_obj_t* cancel_button;
 
     // Result screen elements
     lv_obj_t* result_container;
     lv_obj_t* final_latency_label;
-    lv_obj_t* previous_latency_label;
-    lv_obj_t* message_label;
-
-    // Buttons
-    lv_obj_t* button_row;
-    lv_obj_t* cancel_button;
+    lv_obj_t* previous_value_row;
+    lv_obj_t* previous_value_label;
+    lv_obj_t* verification_row;
+    lv_obj_t* verification_value_label;
+    lv_obj_t* reason_row;
+    lv_obj_t* reason_value_label;
     lv_obj_t* ok_button;
 
     bool visible;
@@ -37,10 +42,9 @@ public:
     void hide();
 
     void show_console_screen();
-    void show_success_screen(float new_latency_ms, float previous_latency_ms);
-    void show_failure_screen(const char* error_message);
+    void show_success_screen(float new_latency_ms, float previous_latency_ms, int verification_success_count);
+    void show_failure_screen(const char* error_message, float previous_latency_ms);
 
-    void append_console_message(const char* message);
     void update_progress(const AutoTuneProgress& progress);
 
     bool is_visible() const { return visible; }

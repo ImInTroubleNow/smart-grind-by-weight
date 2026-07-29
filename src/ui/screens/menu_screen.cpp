@@ -1897,49 +1897,6 @@ void MenuScreen::update_auto_dim_timeout_label(int seconds) {
     }
 }
 
-lv_obj_t* MenuScreen::create_separator(lv_obj_t* parent, const char* text, lv_opa_t line_opa) {
-    // Create separator container
-    lv_obj_t* separator_container = lv_obj_create(parent);
-    lv_obj_set_size(separator_container, LV_PCT(100), LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_opa(separator_container, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(separator_container, 0, 0);
-    lv_obj_set_layout(separator_container, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(separator_container, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(separator_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_clear_flag(separator_container, LV_OBJ_FLAG_SCROLLABLE);
-
-    // Create left line
-    lv_obj_t* left_line = lv_obj_create(separator_container);
-    lv_obj_set_size(left_line, LV_SIZE_CONTENT, 2);
-    lv_obj_set_flex_grow(left_line, 1);
-    lv_obj_set_style_bg_color(left_line, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_bg_opa(left_line, line_opa, 0);
-    lv_obj_set_style_border_width(left_line, 0, 0);
-
-    if (!text) {
-        // If no text, make the line take full width
-        return separator_container;
-    }
-
-    // Create text label
-    lv_obj_t* separator_label = lv_label_create(separator_container);
-    lv_label_set_text(separator_label, text);
-    lv_obj_set_style_text_font(separator_label, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(separator_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_pad_left(separator_label, 10, 0);
-    lv_obj_set_style_pad_right(separator_label, 10, 0);
-
-    // Create right line
-    lv_obj_t* right_line = lv_obj_create(separator_container);
-    lv_obj_set_size(right_line, LV_SIZE_CONTENT, 2);
-    lv_obj_set_flex_grow(right_line, 1);
-    lv_obj_set_style_bg_color(right_line, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_bg_opa(right_line, line_opa, 0);
-    lv_obj_set_style_border_width(right_line, 0, 0);
-
-    return separator_container;
-}
-
 lv_obj_t* MenuScreen::create_section_header(lv_obj_t* parent, const char* text) {
     lv_obj_t* container = lv_obj_create(parent);
     lv_obj_set_size(container, LV_PCT(100), LV_SIZE_CONTENT);
@@ -2195,41 +2152,6 @@ lv_obj_t* MenuScreen::create_flat_toggle_row(lv_obj_t* parent, const char* name,
     return row;
 }
 
-lv_obj_t* MenuScreen::create_flat_data_row(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool with_divider,
-                                            const lv_font_t* font) {
-    // Same flat row shell as create_flat_toggle_row, but with a right-aligned
-    // value label instead of a switch - matches the Logs page's stat rows.
-    lv_obj_t* row = lv_obj_create(parent);
-    lv_obj_set_size(row, LV_PCT(100), LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_radius(row, 0, 0);
-    lv_obj_set_style_border_width(row, with_divider ? 1 : 0, 0);
-    lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
-    lv_obj_set_style_border_color(row, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-    lv_obj_set_style_border_opa(row, LV_OPA_30, 0);
-    // Right padding is wider than the flat toggle rows' symmetric 10px so the
-    // right-aligned value clears the page's scrollbar instead of colliding with it.
-    lv_obj_set_style_pad_left(row, 10, 0);
-    lv_obj_set_style_pad_right(row, 20, 0);
-    lv_obj_set_style_pad_top(row, 6, 0);
-    lv_obj_set_style_pad_bottom(row, 6, 0);
-    lv_obj_set_layout(row, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t* name_label = lv_label_create(row);
-    lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, font, 0);
-    lv_obj_set_style_text_color(name_label, lv_color_hex(THEME_COLOR_TEXT_PRIMARY), 0);
-
-    *value_label = lv_label_create(row);
-    lv_obj_set_style_text_font(*value_label, font, 0);
-    lv_obj_set_style_text_color(*value_label, lv_color_hex(THEME_COLOR_TEXT_SECONDARY), 0);
-
-    return row;
-}
-
 // One "Drip"/"Espresso" row on the Lifetime Stats page: a row label followed by
 // `count` centered value/label pairs (e.g. a count over "2C", "4C", ...), replacing
 // what used to be a single unlabeled slash-separated string of counts.
@@ -2390,31 +2312,6 @@ lv_obj_t* MenuScreen::create_flat_toggle_desc_row(lv_obj_t* parent, const char* 
     lv_obj_add_event_cb(*out_toggle, toggle_state_caption_event_cb, LV_EVENT_VALUE_CHANGED, *out_state_label);
 
     return row;
-}
-
-lv_obj_t* MenuScreen::create_description_label(lv_obj_t* parent, const char* text,
-                                                const lv_font_t* font, lv_color_t color) {
-    // Create container with padding (similar to create_data_label)
-    lv_obj_t* container = lv_obj_create(parent);
-    lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(container, 0, 0);
-    lv_obj_set_style_pad_all(container, 0, 0);
-    lv_obj_set_style_pad_left(container, 10, 0);
-    lv_obj_set_style_pad_right(container, 14, 0);
-    lv_obj_set_style_margin_top(container, 12, 0);
-    lv_obj_set_style_margin_bottom(container, 12, 0);
-    lv_obj_set_size(container, 280, LV_SIZE_CONTENT);
-    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
-
-    // Create label inside container
-    lv_obj_t* label = lv_label_create(container);
-    lv_label_set_text(label, text);
-    lv_obj_set_style_text_font(label, font, 0);
-    lv_obj_set_style_text_color(label, color, 0);
-    lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(label, LV_PCT(100));
-
-    return label;
 }
 
 lv_obj_t* MenuScreen::create_profile_style_row(lv_obj_t* parent, const char* title,

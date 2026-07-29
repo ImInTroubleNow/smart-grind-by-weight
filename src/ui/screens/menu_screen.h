@@ -195,7 +195,6 @@ private:
     void create_data_page(lv_obj_t* parent);
     void create_stats_page(lv_obj_t* parent);
     void create_diagnostics_page(lv_obj_t* parent);
-    lv_obj_t* create_separator(lv_obj_t* parent, const char* text = nullptr, lv_opa_t line_opa = LV_OPA_COVER);
     lv_obj_t* create_section_header(lv_obj_t* parent, const char* text);
     lv_obj_t* create_menu_item(lv_obj_t* parent, const char* text, const char* icon_char, lv_color_t icon_color);
     lv_obj_t *create_toggle_row(lv_obj_t *parent, const char *text,lv_obj_t **out_toggle);
@@ -206,8 +205,6 @@ private:
                                           lv_obj_t **out_toggle, lv_obj_t **out_state_label,
                                           lv_color_t accent_color = lv_color_hex(THEME_COLOR_MENU_SETTINGS),
                                           const lv_font_t *name_font = &lv_font_montserrat_20);
-    lv_obj_t *create_flat_data_row(lv_obj_t *parent, const char *name, lv_obj_t **value_label, bool with_divider = true,
-                                   const lv_font_t *font = &lv_font_montserrat_24);
     lv_obj_t *create_stat_pair_row(lv_obj_t *parent, const char *row_label, lv_obj_t **value_labels,
                                    const char *const *pair_labels, int count);
     lv_obj_t *create_display_slider_row(lv_obj_t *parent, const char *name,
@@ -215,9 +212,6 @@ private:
                                         uint32_t min = 0, uint32_t max = 100,
                                         const char *description = nullptr,
                                         const lv_font_t *name_font = &lv_font_montserrat_24);
-    lv_obj_t *create_description_label(lv_obj_t *parent, const char *text,
-                                       const lv_font_t *font = &lv_font_montserrat_24,
-                                       lv_color_t color = lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
     lv_obj_t *create_profile_style_row(lv_obj_t *parent, const char *title,
                                        const char *category_desc, const char *presets_desc,
                                        lv_obj_t **out_dot); // presets_desc may be nullptr for a single-line description

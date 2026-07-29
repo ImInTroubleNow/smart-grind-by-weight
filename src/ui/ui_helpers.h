@@ -22,6 +22,18 @@ lv_obj_t* create_dual_button_row(lv_obj_t* parent, lv_obj_t** left_button, lv_ob
                                 lv_color_t right_color = lv_color_hex(THEME_COLOR_NEUTRAL), 
                                 int height = 80, const lv_font_t* font = &lv_font_montserrat_28);
 
+// Thin divider line, optionally with a centered caption (e.g. between page sections).
+lv_obj_t* create_separator(lv_obj_t* parent, const char* text = nullptr, lv_opa_t line_opa = LV_OPA_COVER);
+
+// Wrapped paragraph label at the page's fixed 280px width (captions, section intros).
+lv_obj_t* create_description_label(lv_obj_t* parent, const char* text,
+                                   const lv_font_t* font = &lv_font_montserrat_24,
+                                   lv_color_t color = lv_color_hex(THEME_COLOR_TEXT_SECONDARY));
+
+// Flat name/value row with an optional bottom hairline divider (e.g. "Version" / "1.2.3").
+lv_obj_t* create_flat_data_row(lv_obj_t* parent, const char* name, lv_obj_t** value_label, bool with_divider = true,
+                               const lv_font_t* font = &lv_font_montserrat_24);
+
 // Callback signature for segmented control selection changes
 typedef void (*segmented_control_callback_t)(int selected_index, void* user_data);
 

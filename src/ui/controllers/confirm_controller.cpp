@@ -43,8 +43,8 @@ void ConfirmUIController::show(const char* title,
                                const char* confirm_text,
                                lv_color_t confirm_color,
                                std::function<void()> on_confirm,
-                               const char* cancel_text,
-                               std::function<void()> on_cancel) {
+                               std::function<void()> on_cancel,
+                               const char* eyebrow) {
     if (!ui_manager_) {
         return;
     }
@@ -55,7 +55,7 @@ void ConfirmUIController::show(const char* title,
     on_confirm_ = std::move(on_confirm);
     on_cancel_ = std::move(on_cancel);
 
-    ui_manager_->confirm_screen.show(title, message, confirm_text, confirm_color, cancel_text);
+    ui_manager_->confirm_screen.show(title, message, confirm_text, confirm_color, eyebrow);
     ui_manager_->switch_to_state(UIState::CONFIRM);
 }
 

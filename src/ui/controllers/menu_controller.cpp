@@ -100,7 +100,7 @@ void MenuUIController::handle_reset() {
     if (!ui_manager_) return;
 
     ui_manager_->show_confirmation(
-        "FACTORY RESET",
+        "Factory Reset",
         "This will reset all settings to factory defaults:\n\n"
         "• Profile weights\n"
         "• Calibration data\n"
@@ -110,7 +110,6 @@ void MenuUIController::handle_reset() {
         "RESET",
         lv_color_hex(THEME_COLOR_ERROR),
         [this]() { perform_factory_reset(); },
-        "CANCEL",
         [this]() { return_to_menu(); }
     );
 }
@@ -119,7 +118,7 @@ void MenuUIController::handle_purge() {
     if (!ui_manager_) return;
 
     ui_manager_->show_confirmation(
-        "PURGE LOGS",
+        "Purge Logs",
         "This will remove all saved grind log files from flash.\n"
         "Lifetime statistics will be preserved."
         "\n\n"
@@ -127,7 +126,6 @@ void MenuUIController::handle_purge() {
         "PURGE LOGS",
         lv_color_hex(THEME_COLOR_ERROR),
         [this]() { execute_purge_operation(); },
-        "CANCEL",
         [this]() { return_to_menu(); }
     );
 }
@@ -179,16 +177,16 @@ void MenuUIController::handle_autotune() {
     auto autotune_controller = ui_manager_->autotune_controller_.get();
     if (autotune_controller) {
         ui_manager_->show_confirmation(
-            "Auto-Tune Setup",
+            "Tune Pulses",
             "Before starting:\n\n"
             "- Beans loaded\n"
             "- Cup on scale\n\n"
             "Process takes ~1 min.",
             "START",
-            lv_color_hex(THEME_COLOR_ACCENT),
+            lv_color_hex(THEME_COLOR_MENU_CALIBRATION),
             [autotune_controller]() { autotune_controller->confirm_and_begin(); },
-            "CANCEL",
-            [this]() { return_to_menu(); }
+            [this]() { return_to_menu(); },
+            "CALIBRATION"
         );
     }
 }
@@ -212,7 +210,6 @@ void MenuUIController::handle_diagnostics_reset() {
         "RESET",
         lv_color_hex(THEME_COLOR_WARNING),
         [this]() { perform_diagnostics_reset(); },
-        "CANCEL",
         [this]() { return_to_menu(); }
     );
 }

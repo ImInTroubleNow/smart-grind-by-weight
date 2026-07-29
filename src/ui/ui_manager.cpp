@@ -293,14 +293,14 @@ void UIManager::switch_to_state(UIState new_state) {
     }
 }
 
-void UIManager::show_confirmation(const char* title, const char* message, 
+void UIManager::show_confirmation(const char* title, const char* message,
                                  const char* confirm_text, lv_color_t confirm_color,
                                  std::function<void()> on_confirm,
-                                 const char* cancel_text,
-                                 std::function<void()> on_cancel) {
+                                 std::function<void()> on_cancel,
+                                 const char* eyebrow) {
     if (confirm_controller_) {
         confirm_controller_->show(title, message, confirm_text, confirm_color,
-                                  std::move(on_confirm), cancel_text, std::move(on_cancel));
+                                  std::move(on_confirm), std::move(on_cancel), eyebrow);
     }
 }
 

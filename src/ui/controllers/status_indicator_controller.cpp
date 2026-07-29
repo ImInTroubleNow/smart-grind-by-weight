@@ -2,6 +2,7 @@
 
 #include "../../config/constants.h"
 #include "../../system/diagnostics_controller.h"
+#include "../../system/state_machine.h"
 #include "../ui_manager.h"
 
 StatusIndicatorController::StatusIndicatorController(UIManager* manager)
@@ -48,6 +49,13 @@ void StatusIndicatorController::update_ble_status_icon() {
         return;
     }
 
+    // Tune Pulses owns the whole top-right corner for its own header - keep
+    // these global overlay icons off it rather than crowding the title.
+    if (ui_manager_->state_machine && ui_manager_->state_machine->get_current_state() == UIState::AUTOTUNING) {
+        lv_obj_add_flag(ble_status_icon_, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     auto* bluetooth = ui_manager_->bluetooth_manager;
     if (bluetooth && bluetooth->is_enabled()) {
         lv_obj_clear_flag(ble_status_icon_, LV_OBJ_FLAG_HIDDEN);
@@ -62,6 +70,11 @@ void StatusIndicatorController::update_ble_status_icon() {
 
 void StatusIndicatorController::update_warning_icon() {
     if (!ui_manager_ || !warning_icon_) {
+        return;
+    }
+
+    if (ui_manager_->state_machine && ui_manager_->state_machine->get_current_state() == UIState::AUTOTUNING) {
+        lv_obj_add_flag(warning_icon_, LV_OBJ_FLAG_HIDDEN);
         return;
     }
 

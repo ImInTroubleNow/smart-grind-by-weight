@@ -119,8 +119,8 @@ public:
     void show_confirmation(const char* title, const char* message,
                            const char* confirm_text, lv_color_t confirm_color,
                            std::function<void()> on_confirm,
-                           const char* cancel_text = "CANCEL",
-                           std::function<void()> on_cancel = nullptr);
+                           std::function<void()> on_cancel = nullptr,
+                           const char* eyebrow = nullptr);
     
     // Static instance getter
     static UIManager* get_instance() { return instance; }
